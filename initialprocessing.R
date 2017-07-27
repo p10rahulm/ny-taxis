@@ -240,6 +240,34 @@ pbuckets$buckets <- paste0("num_passenger_bucket_",as.character(pbuckets$buckets
 all_buckets <- rbind(dbuckets,hbuckets,pbuckets,sfbuckets,vbuckets)
 rm(dbuckets,hbuckets,pbuckets,sfbuckets,vbuckets)
 
+# Double Aggregation
 
+
+
+# passenger count
+
+
+dhbuckets <- as.data.frame(taxi_train[,
+                                     {list(
+                                       "num_in_bucket" = .N,
+                                       "min_speed" = min(speed),
+                                       "max_speed" = max(speed),
+                                       "avg_speed" = mean(speed),
+                                       "median_speed" = median(speed),
+                                       "p5_speed" = quantile(speed,0.05),
+                                       "p15_speed" = quantile(speed,0.15),
+                                       "p25_speed" = quantile(speed,0.25),
+                                       "p35_speed" = quantile(speed,0.35),
+                                       "p45_speed" = quantile(speed,0.45),
+                                       "p55_speed" = quantile(speed,0.55),
+                                       "p65_speed" = quantile(speed,0.65),
+                                       "p75_speed" = quantile(speed,0.75),
+                                       "p85_speed" = quantile(speed,0.85),
+                                       "p95_speed" = quantile(speed,0.95)
+                                     )
+                                     }
+                                     ,
+                                    by = list("hourbuckets"= hour_of_day,"distancebuckets"= distance_buckets)])
+dhbuckets$buckets <- paste0("distance_",as.character(dhbuckets$buckets))
 
 
