@@ -27,23 +27,38 @@ load(file = "rawdata/taxi_test.bin")
 # ---------------
 # View summary
 # ---------------
+#
 # str(taxi_train)
 # str(taxi_test)
 # view more summaries
 # summary(taxi_train)
 # creating more calculative fields
 # distance field
+
 taxi_train$distance <- sqrt((taxi_train$pickup_longitude-taxi_train$dropoff_longitude)^2+(taxi_train$pickup_latitude-taxi_train$dropoff_latitude)^2)*52.7163052
+
+# --------------------
 # trip duration field in hours
+# --------------------
+
 taxi_train$duration_hours <- taxi_train$trip_duration/3600
+
+# --------------------
 # time of day
+# --------------------
+
 taxi_train$hour_of_day <- as.numeric(substr(taxi_train$pickup_datetime,12,13))
 taxi_train$minute <- as.numeric(substr(taxi_train$pickup_datetime,15,16))
-
+# --------------------
 # speed
+# --------------------
+
 taxi_train$speed <- (taxi_train$distance / taxi_train$duration_hours)
 
+# --------------------
 #distance buckets
+# --------------------
+
 taxi_train$distance_buckets <- 0
 taxi_train[taxi_train$distance < .5,"distance_buckets"] <- 1
 taxi_train[taxi_train$distance < 1 & taxi_train$distance >= .5,]$distance_buckets <- 2
@@ -53,8 +68,10 @@ taxi_train[taxi_train$distance < 10 & taxi_train$distance >= 5,]$distance_bucket
 taxi_train[taxi_train$distance < 20 & taxi_train$distance >= 10,]$distance_buckets <- 6
 taxi_train[taxi_train$distance >= 20,]$distance_buckets <- 7
 
-
+# --------------------
 # some more processing
+# --------------------
+
 taxi_train$sf <- taxi_train$store_and_fwd_flag =="Y"
 taxi_train$store_and_fwd_flag <- NULL
 
@@ -103,9 +120,13 @@ taxi_train$store_and_fwd_flag <- NULL
 # ---------------
 # Create summary buckets
 # ---------------
+
 taxi_train <- data.table(taxi_train)
 
+# --------------------
 # distance buckets
+# --------------------
+
 dbuckets <- as.data.frame(taxi_train[,
                                              {list(
                                                "num_in_bucket" = .N,
@@ -129,8 +150,9 @@ dbuckets <- as.data.frame(taxi_train[,
                                              by = list("buckets"= distance_buckets)])
 dbuckets$buckets <- paste0("distance_bucket_",as.character(dbuckets$buckets))
 
+# --------------------
 # hour of day
-
+# --------------------
 
 hbuckets <- as.data.frame(taxi_train[,
                                      {list(
@@ -155,9 +177,9 @@ hbuckets <- as.data.frame(taxi_train[,
                                      by = list("buckets"= hour_of_day)])
 hbuckets$buckets <- paste0("hour_bucket_",as.character(hbuckets$buckets))
 
-
+# --------------------
 # vendor
-
+# --------------------
 
 vbuckets <- as.data.frame(taxi_train[,
                                      {list(
@@ -182,9 +204,9 @@ vbuckets <- as.data.frame(taxi_train[,
                                      by = list("buckets"= vendor_id)])
 vbuckets$buckets <- paste0("vendor_bucket_",as.character(vbuckets$buckets))
 
-
+# --------------------
 # store_and_fwd_flag
-
+# --------------------
 
 sfbuckets <- as.data.frame(taxi_train[,
                                      {list(
@@ -209,9 +231,9 @@ sfbuckets <- as.data.frame(taxi_train[,
                                      by = list("buckets"= sf)])
 sfbuckets$buckets <- paste0("sf_bucket_",as.character(sfbuckets$buckets))
 
-
+# --------------------
 # passenger count
-
+# --------------------
 
 pbuckets <- as.data.frame(taxi_train[,
                                      {list(
@@ -240,12 +262,9 @@ pbuckets$buckets <- paste0("num_passenger_bucket_",as.character(pbuckets$buckets
 all_buckets <- rbind(dbuckets,hbuckets,pbuckets,sfbuckets,vbuckets)
 rm(dbuckets,hbuckets,pbuckets,sfbuckets,vbuckets)
 
+# --------------------
 # Double Aggregation
-
-
-
-# passenger count
-
+# --------------------
 
 dhbuckets <- as.data.frame(taxi_train[,
                                      {list(
@@ -269,5 +288,4 @@ dhbuckets <- as.data.frame(taxi_train[,
                                      ,
                                     by = list("hourbuckets"= hour_of_day,"distancebuckets"= distance_buckets)])
 dhbuckets$buckets <- paste0("distance_",as.character(dhbuckets$buckets))
-
 
