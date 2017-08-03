@@ -19,13 +19,13 @@ library(data.table)
 # save(taxi_test,file="rawdata/taxi_test.bin")
 
 # ---------------
-# Load files afresh
+# # Load files afresh
 # ---------------
 load(file = "~/Desktop/datascienceprojects/taxi_project/rawdata/taxi_train.bin")
 load(file = "~/Desktop/datascienceprojects/taxi_project/rawdata/taxi_test.bin")
 
 # ---------------
-# View summary
+# # View summary
 # ---------------
 #
 # str(taxi_train)
@@ -38,25 +38,23 @@ load(file = "~/Desktop/datascienceprojects/taxi_project/rawdata/taxi_test.bin")
 taxi_train$distance <- sqrt((taxi_train$pickup_longitude-taxi_train$dropoff_longitude)^2+(taxi_train$pickup_latitude-taxi_train$dropoff_latitude)^2)*52.7163052
 
 # --------------------
-# trip duration field in hours
+# # trip duration field in hours
 # --------------------
-
 taxi_train$duration_hours <- taxi_train$trip_duration/3600
 
 # --------------------
-# time of day
+# # time of day
 # --------------------
-
 taxi_train$hour_of_day <- as.numeric(substr(taxi_train$pickup_datetime,12,13))
 taxi_train$minute <- as.numeric(substr(taxi_train$pickup_datetime,15,16))
 # --------------------
-# speed
+# # speed
 # --------------------
 
 taxi_train$speed <- (taxi_train$distance / taxi_train$duration_hours)
 
 # --------------------
-#distance buckets
+# # distance buckets
 # --------------------
 
 taxi_train$distance_buckets <- 0
@@ -69,7 +67,7 @@ taxi_train[taxi_train$distance < 20 & taxi_train$distance >= 10,]$distance_bucke
 taxi_train[taxi_train$distance >= 20,]$distance_buckets <- 7
 
 # --------------------
-# some more processing
+# # some more processing
 # --------------------
 
 taxi_train$sf <- taxi_train$store_and_fwd_flag =="Y"
@@ -79,6 +77,7 @@ taxi_train$store_and_fwd_flag <- NULL
 # # ---------------
 # # subsetting
 # # ---------------
+
 # b1 <- taxi_train[taxi_train$distance_buckets == 1,"speed"]
 # b1$speedB1 <- b1$speed
 # b1$speed <- NULL
@@ -118,13 +117,13 @@ taxi_train$store_and_fwd_flag <- NULL
 # summary_dbuckets <- cbind(b1s,b2s,b3s,b4s,b5s,b6s,b7s)
 
 # ---------------
-# Create summary buckets
+# # Create summary buckets
 # ---------------
 
 taxi_train <- data.table(taxi_train)
 
 # --------------------
-# distance buckets
+# # distance buckets
 # --------------------
 
 dbuckets <- as.data.frame(taxi_train[,
@@ -151,7 +150,7 @@ dbuckets <- as.data.frame(taxi_train[,
 dbuckets$buckets <- paste0("distance_bucket_",as.character(dbuckets$buckets))
 
 # --------------------
-# hour of day
+# # hour of day
 # --------------------
 
 hbuckets <- as.data.frame(taxi_train[,
@@ -178,7 +177,7 @@ hbuckets <- as.data.frame(taxi_train[,
 hbuckets$buckets <- paste0("hour_bucket_",as.character(hbuckets$buckets))
 
 # --------------------
-# vendor
+# # vendor
 # --------------------
 
 vbuckets <- as.data.frame(taxi_train[,
@@ -205,7 +204,7 @@ vbuckets <- as.data.frame(taxi_train[,
 vbuckets$buckets <- paste0("vendor_bucket_",as.character(vbuckets$buckets))
 
 # --------------------
-# store_and_fwd_flag
+# # store_and_fwd_flag
 # --------------------
 
 sfbuckets <- as.data.frame(taxi_train[,
@@ -232,7 +231,7 @@ sfbuckets <- as.data.frame(taxi_train[,
 sfbuckets$buckets <- paste0("sf_bucket_",as.character(sfbuckets$buckets))
 
 # --------------------
-# passenger count
+# # passenger count
 # --------------------
 
 pbuckets <- as.data.frame(taxi_train[,
@@ -263,7 +262,7 @@ all_buckets <- rbind(dbuckets,hbuckets,pbuckets,sfbuckets,vbuckets)
 rm(dbuckets,hbuckets,pbuckets,sfbuckets,vbuckets)
 
 # --------------------
-# Double Aggregation
+# # Double Aggregation
 # --------------------
 
 dhbuckets <- as.data.frame(taxi_train[,
@@ -290,7 +289,7 @@ dhbuckets <- as.data.frame(taxi_train[,
 dhbuckets$buckets <- paste0("distance_",as.character(dhbuckets$buckets))
 
 # -----------------------
-# Plotting with map
+# # Plotting with map
 # -----------------------
 
 library(ggplot2)
@@ -308,16 +307,14 @@ ggmap(mapgilbert) +
   guides(fill=FALSE, alpha=FALSE, size=FALSE)
 
 # -----------------
-# plotting on x y 
+# # plotting on x y 
 # -----------------
 
 plot(taxi_train$pickup_longitude[1:1000])
 plot(taxi_train$pickup_latitude[1:1000])
 
-# states that the most common place is midtown
-
 #----------------------
-# Creating long / lat pick up buckets
+# # Creating long / lat pick up buckets
 #----------------------
 # http://www.bdcc.co.uk/Gmaps/ll_grat_v3_demo.htm
 
@@ -355,6 +352,7 @@ taxi_train[(taxi_train$pickup_longitude < -73.98333 & taxi_train$pickup_longitud
 taxi_train[(taxi_train$pickup_longitude < -73.96663 & taxi_train$pickup_longitude >= -73.98333) & (taxi_train$pickup_latitude < 40.800 & taxi_train$pickup_latitude >= 40.775),"pickup_buckets"] <- 16
 taxi_train[(taxi_train$pickup_longitude < -73.94999 & taxi_train$pickup_longitude >= -73.96663) & (taxi_train$pickup_latitude < 40.800 & taxi_train$pickup_latitude >= 40.775),"pickup_buckets"] <- 17
 taxi_train[(taxi_train$pickup_longitude < -73.93333 & taxi_train$pickup_longitude >= -73.94999) & (taxi_train$pickup_latitude < 40.800 & taxi_train$pickup_latitude >= 40.775),"pickup_buckets"] <- 18
+
 #row 4
   
 taxi_train[(taxi_train$pickup_longitude < -74.01663 & taxi_train$pickup_longitude >= -74.03333) & (taxi_train$pickup_latitude < 40.775 & taxi_train$pickup_latitude >= 40.750),"pickup_buckets"] <- 19
@@ -363,6 +361,7 @@ taxi_train[(taxi_train$pickup_longitude < -73.98333 & taxi_train$pickup_longitud
 taxi_train[(taxi_train$pickup_longitude < -73.96663 & taxi_train$pickup_longitude >= -73.98333) & (taxi_train$pickup_latitude < 40.775 & taxi_train$pickup_latitude >= 40.750),"pickup_buckets"] <- 22
 taxi_train[(taxi_train$pickup_longitude < -73.94999 & taxi_train$pickup_longitude >= -73.96663) & (taxi_train$pickup_latitude < 40.775 & taxi_train$pickup_latitude >= 40.750),"pickup_buckets"] <- 23
 taxi_train[(taxi_train$pickup_longitude < -73.93333 & taxi_train$pickup_longitude >= -73.94999) & (taxi_train$pickup_latitude < 40.775 & taxi_train$pickup_latitude >= 40.750),"pickup_buckets"] <- 24
+
 # row 5
   
 taxi_train[(taxi_train$pickup_longitude < -74.01663 & taxi_train$pickup_longitude >= -74.03333) & (taxi_train$pickup_latitude < 40.750 & taxi_train$pickup_latitude >= 40.725),"pickup_buckets"] <- 25
@@ -371,6 +370,7 @@ taxi_train[(taxi_train$pickup_longitude < -73.98333 & taxi_train$pickup_longitud
 taxi_train[(taxi_train$pickup_longitude < -73.96663 & taxi_train$pickup_longitude >= -73.98333) & (taxi_train$pickup_latitude < 40.750 & taxi_train$pickup_latitude >= 40.725),"pickup_buckets"] <- 28
 taxi_train[(taxi_train$pickup_longitude < -73.94999 & taxi_train$pickup_longitude >= -73.96663) & (taxi_train$pickup_latitude < 40.750 & taxi_train$pickup_latitude >= 40.725),"pickup_buckets"] <- 29
 taxi_train[(taxi_train$pickup_longitude < -73.93333 & taxi_train$pickup_longitude >= -73.94999) & (taxi_train$pickup_latitude < 40.750 & taxi_train$pickup_latitude >= 40.725),"pickup_buckets"] <- 30
+
 # row 6
   
 taxi_train[(taxi_train$pickup_longitude < -74.01663 & taxi_train$pickup_longitude >= -74.03333) & (taxi_train$pickup_latitude < 40.725 & taxi_train$pickup_latitude >= 40.700),"pickup_buckets"] <- 31
@@ -388,10 +388,15 @@ taxi_train[(taxi_train$pickup_longitude < -73.93333 & taxi_train$pickup_longitud
 # taxi_train[taxi_train$pickup_latitude < 40.750 & taxi_train$pickup_latitude >= 40.725,"pickup_buckets"]
 # taxi_train[taxi_train$pickup_latitude < 40.725 & taxi_train$pickup_latitude >= 40.700,"pickup_buckets"]
 
+# ----------------------
+# # pick up buckets
+# ----------------------
 
-pubuckets <- as.data.frame(taxi_train[,
+pickup_location_buckets <- as.data.frame(taxi_train[,
                                       {list(
                                         "num_in_bucket" = .N,
+                                        "avg_duration_Minutes" = mean(trip_duration/60),
+                                        "median_duration_Minutes" = median(trip_duration/60),
                                         "min_speed" = min(speed),
                                         "max_speed" = max(speed),
                                         "avg_speed" = mean(speed),
@@ -409,6 +414,44 @@ pubuckets <- as.data.frame(taxi_train[,
                                       )
                                       }
                                       ,
-                                      by = ("pubuckets"= pickup_buckets)])
-pubuckets$buckets <- paste0("pickup_bucket_",as.character(pubuckets$buckets))
+                                      by = list("pick_upbuckets"= pickup_buckets)])
+pickup_location_buckets$buckets <- paste0("pickup_location_bucket_",as.character(pickup_location_buckets$buckets))
+
+# --------------------
+# pick up duration buckets                # sensory overload
+# --------------------
+# pudbuckets <- as.data.frame(taxi_train[,
+#                                       {list(
+#                                         "num_in_bucket" = .N,
+#                                         "min_speed" = min(speed),
+#                                         "max_speed" = max(speed),
+#                                         "avg_speed" = mean(speed),
+#                                         "median_speed" = median(speed),
+#                                         "p5_speed" = quantile(speed,0.05),
+#                                         "p15_speed" = quantile(speed,0.15),
+#                                         "p25_speed" = quantile(speed,0.25),
+#                                         "p35_speed" = quantile(speed,0.35),
+#                                         "p45_speed" = quantile(speed,0.45),
+#                                         "p55_speed" = quantile(speed,0.55),
+#                                         "p65_speed" = quantile(speed,0.65),
+#                                         "p75_speed" = quantile(speed,0.75),
+#                                         "p85_speed" = quantile(speed,0.85),
+#                                         "p95_speed" = quantile(speed,0.95)
+#                                       )
+#                                       }
+#                                       ,
+#                                       by = list("duration_buckets"= distance_buckets,"pick_up_location_buckets"= pickup_buckets)])
+# pudbuckets$buckets <- paste0("pickup_duration_bucket_",as.character(pudbuckets$buckets))
+
+
+# ---------------
+# # Map Buckets
+# ---------------
+
+# ---------------
+# # filtering pick up data by long/lat
+# ---------------
+
+taxi_train <- taxi_train[(taxi_train$pickup_longitude > -74.41952) & (taxi_train$pickup_longitude < -73.4848)]
+
 
