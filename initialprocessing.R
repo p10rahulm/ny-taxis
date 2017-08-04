@@ -2,8 +2,10 @@
 # ---------------
 # initialize and load libraries
 # ---------------
-# rm(list = ls())
+rm(list = ls())
 library(data.table)
+source("distance_functions.R")
+
 # # ---------------
 # # reading file
 # # ---------------
@@ -21,8 +23,28 @@ library(data.table)
 # ---------------
 # # Load files afresh
 # ---------------
-load(file = "~/Desktop/datascienceprojects/taxi_project/rawdata/taxi_train.bin")
-load(file = "~/Desktop/datascienceprojects/taxi_project/rawdata/taxi_test.bin")
+load(file = "rawdata/taxi_train.bin")
+load(file = "rawdata/taxi_test.bin")
+
+
+# ---------------
+# Create a test and training data set
+# ---------------
+
+## 75% of the sample size
+smp_size <- floor(0.75 * nrow(taxi_train))
+
+## set the seed to make your partition reproductible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(taxi_train)), size = smp_size)
+
+train <- taxi_train[train_ind, ]
+test <- taxi_train[-train_ind, ]
+
+save(train,file="rawdata/train.bin")
+save(test,file="rawdata/test.bin")
+save(validation,file="rawdata/validation.bin")
+
 
 # ---------------
 # # View summary
@@ -295,11 +317,11 @@ dhbuckets$buckets <- paste0("distance_",as.character(dhbuckets$buckets))
 library(ggplot2)
 library(ggmap)
 
-lon <- c(taxi_train$pickup_longitude[1:10000])
-lat <- c(taxi_train$pickup_latitude[1:10000])
+lon <- c(taxi_train$pickup_longitude[1:100000])
+lat <- c(taxi_train$pickup_latitude[1:100000])
 df <- as.data.frame(cbind(lon,lat))
 
-mapgilbert <- get_map(location = c(lon = mean(df$lon), lat = mean(df$lat)), zoom = 12,
+mapgilbert <- get_map(location = c(lon = mean(df$lon), lat = mean(df$lat)), zoom = 11,
                       maptype = "satellite", scale = 2)
 
 ggmap(mapgilbert) +
@@ -310,8 +332,8 @@ ggmap(mapgilbert) +
 # # plotting on x y 
 # -----------------
 
-plot(taxi_train$pickup_longitude[1:1000])
-plot(taxi_train$pickup_latitude[1:1000])
+plot(taxi_train$pickup_longitude[1:10000])
+plot(taxi_train$pickup_latitude[1:10000])
 
 #----------------------
 # # Creating long / lat pick up buckets
@@ -452,6 +474,238 @@ pickup_location_buckets$buckets <- paste0("pickup_location_bucket_",as.character
 # # filtering pick up data by long/lat
 # ---------------
 
-taxi_train <- taxi_train[(taxi_train$pickup_longitude > -74.41952) & (taxi_train$pickup_longitude < -73.4848)]
+taxi_train <- taxi_train[(taxi_train$pickup_longitude > -74.24602) & (taxi_train$pickup_longitude < -73.49034)]
+taxi_train <- taxi_train[(taxi_train$pickup_latitude > 40.41323) & (taxi_train$pickup_latitude < 40.98800)]
 
 
+taxi_train$map_buckets <- 'z'
+
+# -----------------
+# # Bucket A
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -74.000780 & taxi_train$pickup_longitude >= -74.24602) & (taxi_train$pickup_latitude < 40.988000 & taxi_train$pickup_latitude >= 40.87492),"map_buckets" ] <- 'a'
+
+# -----------------
+# # Bucket B
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -74.000780 & taxi_train$pickup_longitude >= -74.24602) & (taxi_train$pickup_latitude < 40.847492 & taxi_train$pickup_latitude >= 40.700768),"map_buckets" ] <- 'b'
+
+# -----------------
+# # Bucket C
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -74.000780 & taxi_train$pickup_longitude >= -74.24602) & (taxi_train$pickup_latitude < 40.700780 & taxi_train$pickup_latitude >= 40.41323),"map_buckets" ] <- 'c'
+
+# -----------------
+# # Bucket D
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -73.915957 & taxi_train$pickup_longitude >= -74.00780) & (taxi_train$pickup_latitude < 40.700780 & taxi_train$pickup_latitude >= 40.41323),"map_buckets" ] <- 'd'
+
+# -----------------
+# # Bucket E
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -73.49034 & taxi_train$pickup_longitude >= -73.915957) & (taxi_train$pickup_latitude < 40.700780 & taxi_train$pickup_latitude >= 40.41323),"map_buckets" ] <- 'e'
+
+# -----------------
+# # Bucket F
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -73.49034 & taxi_train$pickup_longitude >= -73.915957) & (taxi_train$pickup_latitude < 40.801191 & taxi_train$pickup_latitude >= 40.700780),"map_buckets" ] <- 'f'
+
+# -----------------
+# # Bucket G
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -73.49034 & taxi_train$pickup_longitude >= -73.915957) & (taxi_train$pickup_latitude < 40.988000 & taxi_train$pickup_latitude >= 40.801191),"map_buckets" ] <- 'g'
+
+# -----------------
+# # Bucket H
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -73.915957 & taxi_train$pickup_longitude >= -74.00780) & (taxi_train$pickup_latitude < 40.98800 & taxi_train$pickup_latitude >= 40.801191),"map_buckets" ] <- 'h'
+
+# -----------------
+# # Bucket I
+# -----------------
+
+taxi_train[(taxi_train$pickup_longitude < -73.915957 & taxi_train$pickup_longitude >= -74.00780) & (taxi_train$pickup_latitude < 40.8974924 & taxi_train$pickup_latitude >= 40.700760),"map_buckets" ] <- 'i'
+
+# -----------------
+# # Map_buckets summary
+# _________________
+
+map_buckets_summary <- as.data.frame(taxi_train[,
+                                                    {list(
+                                                      "num_in_bucket" = .N,
+                                                      "avg_duration_Minutes" = mean(trip_duration/60),
+                                                      "median_duration_Minutes" = median(trip_duration/60),
+                                                      "min_speed" = min(speed),
+                                                      "max_speed" = max(speed),
+                                                      "avg_speed" = mean(speed),
+                                                      "median_speed" = median(speed),
+                                                      "p5_speed" = quantile(speed,0.05),
+                                                      "p15_speed" = quantile(speed,0.15),
+                                                      "p25_speed" = quantile(speed,0.25),
+                                                      "p35_speed" = quantile(speed,0.35),
+                                                      "p45_speed" = quantile(speed,0.45),
+                                                      "p55_speed" = quantile(speed,0.55),
+                                                      "p65_speed" = quantile(speed,0.65),
+                                                      "p75_speed" = quantile(speed,0.75),
+                                                      "p85_speed" = quantile(speed,0.85),
+                                                      "p95_speed" = quantile(speed,0.95)
+                                                    )
+                                                    }
+                                                    ,
+                                                    by = list("map_upbuckets"= map_buckets)])
+map_buckets_summary$buckets <- paste0("pickup_location_bucket_",as.character(map_buckets_summary$buckets))
+
+# ---------------
+# # Manhattan grid
+# ---------------
+
+# variable labels:
+# Wolfram Alpha : http://www.wolframalpha.com/widgets/view.jsp?id=7b9037eb9f5f7493a73df97a38bc58e6
+
+
+x1 <- 40.709748
+y1 <- -74.036782
+# x2 <- 40.848936
+x2 <- 40.7238462472
+# y2 <- -73.946282
+y2 <- -74.0275879719
+x3 <- 40.697260
+y3 <- -73.986695
+
+# (py – qy)x + (qx – px)y + (pxqy – qxpy) = 0
+# (y1-y2)x + (x2-x1)y + (x1*y2 - x2*y1) = 0
+# lines have been GRAPHED
+l1 <- function(x,y){
+ # 0.0905x + 0.139188y +(-13.98926) = 0
+ return ((y1-y2)*x + (x2-x1)*y +(x1*y2 - x2*y1))
+}
+l2 <- function(x,y){
+  # perpendicular line...
+  # (qx – px)*x + (py – qy)*y - ((qx – px)*x3 - (py – qy)*y3)
+  # (y2-y1)*x + (x1-x2)*y - ((y1-y2)*x3 - (x2 - x1)*y3) = 0
+  return ((y2-y1)*x + (x1-x2)*y - ((y1-y2)*x3 - (x2 - x1)*y3))
+}
+l3 <- function(x,y){
+  # (x1-x2)*x - (y2-y1)*y + ((y2-y1)*y3 - (x1-x2)*x3)
+  # For perpendicular
+  # return((x1-x2)*x - (y2-y1)*y + ((y2-y1)*y3 - (x1-x2)*x3))
+  # this was wrong
+  return ((y2-y3)*x + (x3-x2)*y +(x2*y3 - x3*y2) )
+  
+}
+
+l4 <- function(x,y){
+  # return ((x1-x2)*x - (y2-y1)*y + ((y2-y1)*y2 - (x1-x2)*x2))
+  # (y2-y3)*x + (x3-x2)*y +((y2-y3)*x1 - (x3-x2)*y1) = 0
+  # (y1-y2)x - (x2-x1)y + ((y1-y2)*y1 - (x2-x1)*x1) = 0
+  
+  # equation posed by Rahul...gives me perpendicular 
+  # (x2-x1)*y -(y1-y2)*y + ((y1-y2)*y1-((x2-x1)*x1)
+  }
+
+x4 <- 40.822 # find more exact points by solving for y
+y4 <- -73.905
+
+# creating matrix
+
+lin <-as.data.frame(matrix(data=as.numeric(0), nrow = 4, ncol = 2))
+colnames(lin) <- c("C_value","slope" )
+rownames(lin) <- c("line 1", "line 2","line 3","line 4")
+
+lin[1,1] <- (x1*y2 - x2*y1)
+lin[1,2] <- (y1-y2)/(x1-x2)
+lin[2,1] <- (y1-y2)*x3 - (x2 - x1)*y3
+lin[2,2] <- (y3-y4)/(x3-x4)
+lin[3,1] <- (y2-y1)*y3 - (x1-x2)*x3
+lin[3,2] <- (y2-y3)/(x2-x3)
+lin[4,1] <- (y2-y1)*y2 - (x1-x2)*x2
+lin[4,2] <- (y4-y1)/(x4-x1)
+
+
+
+# l1 <- function(x,y){
+#   m <- ((y1-y3)/(x1-x3)) 
+#   b <- y3-(m)*x3
+#   return ((m*x)-y+b)
+# }
+
+line_equation <- function(line_number, x, y){
+  return((lin[line_number,1]*x)+(lin[line_number,2]*y)+(lin[line_number,3]))
+}
+
+
+
+# l1 <- function(x,y){    #this format works
+# a_fun <- ((y3 - y1) * x)
+# b_fun <- ((x3-x1) * y)
+# c_fun <- ((y1*x3 - y3*x1))
+#   return (a_fun + b_fun + c_fun)
+# }
+
+# slope of l1 : -4.0463636363638
+# distance between (x3, y3) and (x1, y1) : 0.0596
+
+# l2 <- function(x,y){
+#   m <- ((y1-y2)/(x1-x2)) 
+#   b <- y2-(m)*x2
+#   return ((m*x)-y+b)
+# }
+
+# l2 <- function(x,y){    #this format works
+#   a_fun <- ((y2 - y1) * x)
+#   b_fun <- ((x2-x1) * y)
+#   c_fun <- ((y1*x2 - y1*x2))
+#   return (a_fun + b_fun + c_fun)
+# }
+
+
+# l3 <- function(x,y){
+#   a_fun <- ((y2 - y4) * x)
+#   b_fun <- ((x2-x4) * y)
+#   c_fun <- ((y4*x2 - y4*x2))
+# return (a_fun + b_fun + c_fun)
+# }
+
+# l3 <- function(x,y){
+#   m <- ((y4-y2)/(x4-x2)) 
+#   b <- y4-(m)*x4
+#   return ((m*x)-y+b)
+# }
+
+# l4 <- function(x,y){
+#   a_fun <- ((y3 - y4) * x)
+#   b_fun <- ((x3-x4) * y)
+#   c_fun <- ((y4*x3 - y4*x3))
+#   return (a_fun + b_fun + c_fun)
+# }
+
+# l4 <- function(x,y){
+#   m <- ((y4-y3)/(x4-x3)) 
+#   b <- y3-(m)*x3
+#   return ((m*x)-y+b)
+# }
+
+# -------------------
+# Distance functions!
+# -------------------
+
+distance_line_point <- function(line_number, x, y){
+  numerator <- line_equation(line_number,x,y)
+  denominator <- sqrt(((lin[line_number,1])^2)+((lin[line_number,2])^2))
+  return(numerator/denominator)
+}
+
+distance_line_line <- function(line_number, line_number_2){
+  numerator <- lin[line_number_2,3] - lin[line_number,3]
+  denominator <- 0
+}
+
+  
