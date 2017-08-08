@@ -72,62 +72,35 @@ train$store_and_fwd_flag <- NULL
 # # Create summary buckets
 # ---------------
 
-taxi_train <- data.table(taxi_train)
+train <- data.table(train)
+mapbuckets <- read.csv("rawdata/mapbuckets_boundaries.csv")
+
 train$map_buckets <- as.integer(0)
+for(i in 1:nrow(mapbuckets)){
+  train[(train$pickup_longitude < mapbuckets$LongMin[i] & train$pickup_longitude >= mapbuckets$LongMax[i]) & (train$pickup_latitude <= mapbuckets$LatMax[i] & train$pickup_latitude >  mapbuckets$LatMin[i]),"map_buckets" ] <- i
+}
 
-# -----------------
-# # Bucket 1
-# -----------------
+train$map_buckets_lat <- as.integer(0)
+train$map_buckets_long <- as.integer(0)
 
-train[(train$pickup_longitude < -74.04785 & train$pickup_longitude >= -74.24602) & (train$pickup_latitude < 40.988000 & train$pickup_latitude >=  40.901577492),"map_buckets" ] <- 1
+for(i in 1:(nrow(mapbuckets)-1)){
+    train[train$map_buckets==i,]$map_buckets_long <- ceiling((train[train$map_buckets==i,]$pickup_longitude--mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
+    train[train$map_buckets==i,]$map_buckets_lat <- ceiling((train[train$map_buckets==i,]$pickup_latitude--mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
+}
 
-# -----------------
-# # Bucket 2
-# -----------------
 
-train[(train$pickup_longitude < -74.04785 & train$pickup_longitude >= -74.24602) & (train$pickup_latitude <  40.901577492 & train$pickup_latitude >= 40.700768),"map_buckets" ] <- 2
 
-# -----------------
-# # Bucket 3
-# -----------------
 
-train[(train$pickup_longitude < -74.04785 & train$pickup_longitude >= -74.24602) & (train$pickup_latitude < 40.700780 & train$pickup_latitude >= 40.41323),"map_buckets" ] <- 3
 
-# -----------------
-# # Bucket 4
-# -----------------
 
-train[(train$pickup_longitude < -73.915957 & train$pickup_longitude >= -74.04785) & (train$pickup_latitude < 40.700780 & train$pickup_latitude >= 40.41323),"map_buckets" ] <- 4
 
-# -----------------
-# # Bucket 5
-# -----------------
 
-train[(train$pickup_longitude < -73.49034 & train$pickup_longitude >= -73.915957) & (train$pickup_latitude < 40.700780 & train$pickup_latitude >= 40.41323),"map_buckets" ] <- 5
 
-# -----------------
-# # Bucket 6
-# -----------------
 
-train[(train$pickup_longitude < -73.49034 & train$pickup_longitude >= -73.915957) & (train$pickup_latitude <  40.901577492 & train$pickup_latitude >= 40.700780),"map_buckets" ] <- 6
 
-# -----------------
-# # Bucket 7
-# -----------------
 
-train[(train$pickup_longitude < -73.49034 & train$pickup_longitude >= -73.915957) & (train$pickup_latitude < 40.988000 & train$pickup_latitude >=  40.901577492),"map_buckets" ] <- 7
 
-# -----------------
-# # Bucket 8
-# -----------------
 
-train[(train$pickup_longitude < -73.915957 & train$pickup_longitude >= -74.04785) & (train$pickup_latitude < 40.98800 & train$pickup_latitude >=  40.901577492),"map_buckets" ] <- 8
-
-# -----------------
-# # Bucket 9
-# -----------------
-
-train[(train$pickup_longitude < -73.915957 & train$pickup_longitude >= -74.00780) & (train$pickup_latitude < 40.8974924 & train$pickup_latitude >= 40.700760),"map_buckets" ] <- 9
 
 
 # -----------------
