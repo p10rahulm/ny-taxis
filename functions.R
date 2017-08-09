@@ -12,6 +12,7 @@ is_point_above <- function(a,b,c,x,y){
   return(a*x+b*y+c >= 0)
 }
 parallel_line_thru_point <- function(a,b,c,x,y){
+  
   output = list("a" = a,"b"=b,"c" = (-a*x-b*y))
   return(output)
 }
@@ -26,3 +27,9 @@ distance_between_parallel_lines <- function(a1,b1,c1,a2,b2,c2){
   output = abs((c2*a1/a2 - c1))/sqrt(a1^2 + b1^2)
   return(output)
 }
+
+perpendicular_distance_from_point_to_line <- function(a,b,c,x,y){
+  output <- abs(a*x + b*y +c )/sqrt(a^2 + b^2)
+  return(output)
+}
+
