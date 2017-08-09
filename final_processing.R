@@ -72,35 +72,62 @@ train$store_and_fwd_flag <- NULL
 # # Create summary buckets
 # ---------------
 
-train <- data.table(train)
-mapbuckets <- read.csv("rawdata/mapbuckets_boundaries.csv")
-
+taxi_train <- data.table(taxi_train)
 train$map_buckets <- as.integer(0)
-for(i in 1:nrow(mapbuckets)){
-  train[(train$pickup_longitude < mapbuckets$LongMin[i] & train$pickup_longitude >= mapbuckets$LongMax[i]) & (train$pickup_latitude <= mapbuckets$LatMax[i] & train$pickup_latitude >  mapbuckets$LatMin[i]),"map_buckets" ] <- i
-}
 
-train$map_buckets_lat <- as.integer(0)
-train$map_buckets_long <- as.integer(0)
+# -----------------
+# # Bucket 1
+# -----------------
 
-for(i in 1:(nrow(mapbuckets)-1)){
-    train[train$map_buckets==i,]$map_buckets_long <- ceiling((train[train$map_buckets==i,]$pickup_longitude--mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
-    train[train$map_buckets==i,]$map_buckets_lat <- ceiling((train[train$map_buckets==i,]$pickup_latitude--mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
-}
+train[(train$pickup_longitude < -74.04785 & train$pickup_longitude >= -74.24602) & (train$pickup_latitude < 40.988000 & train$pickup_latitude >=  40.901577492),"map_buckets" ] <- 1
 
+# -----------------
+# # Bucket 2
+# -----------------
 
+train[(train$pickup_longitude < -74.04785 & train$pickup_longitude >= -74.24602) & (train$pickup_latitude <  40.901577492 & train$pickup_latitude >= 40.700768),"map_buckets" ] <- 2
 
+# -----------------
+# # Bucket 3
+# -----------------
 
+train[(train$pickup_longitude < -74.04785 & train$pickup_longitude >= -74.24602) & (train$pickup_latitude < 40.700780 & train$pickup_latitude >= 40.41323),"map_buckets" ] <- 3
 
+# -----------------
+# # Bucket 4
+# -----------------
 
+train[(train$pickup_longitude < -73.915957 & train$pickup_longitude >= -74.04785) & (train$pickup_latitude < 40.700780 & train$pickup_latitude >= 40.41323),"map_buckets" ] <- 4
 
+# -----------------
+# # Bucket 5
+# -----------------
 
+train[(train$pickup_longitude < -73.49034 & train$pickup_longitude >= -73.915957) & (train$pickup_latitude < 40.700780 & train$pickup_latitude >= 40.41323),"map_buckets" ] <- 5
 
+# -----------------
+# # Bucket 6
+# -----------------
 
+train[(train$pickup_longitude < -73.49034 & train$pickup_longitude >= -73.915957) & (train$pickup_latitude <  40.901577492 & train$pickup_latitude >= 40.700780),"map_buckets" ] <- 6
 
+# -----------------
+# # Bucket 7
+# -----------------
 
+train[(train$pickup_longitude < -73.49034 & train$pickup_longitude >= -73.915957) & (train$pickup_latitude < 40.988000 & train$pickup_latitude >=  40.901577492),"map_buckets" ] <- 7
 
+# -----------------
+# # Bucket 8
+# -----------------
 
+train[(train$pickup_longitude < -73.915957 & train$pickup_longitude >= -74.04785) & (train$pickup_latitude < 40.98800 & train$pickup_latitude >=  40.901577492),"map_buckets" ] <- 8
+
+# -----------------
+# # Bucket 9
+# -----------------
+
+train[(train$pickup_longitude < -73.915957 & train$pickup_longitude >= -74.00780) & (train$pickup_latitude < 40.8974924 & train$pickup_latitude >= 40.700760),"map_buckets" ] <- 9
 
 
 # -----------------
@@ -156,11 +183,11 @@ bucket_array <- function(bucket,i,j){
   #   return(bucket,subbucket_x, subbucket_y)
   # }
   else{ #for anything in bucket 9
-    return (0)
+    return (list(bucket,0,0))
   }
 }
 
-bucket_arrays <- bucket_array(train$map_buckets,train$pickup_longitude,train$pickup_latitude)
+bucket_arrays <- as.data.frame(bucket_array(train$map_buckets,train$pickup_longitude,train$pickup_latitude))
 
 
 # ---------------
@@ -215,19 +242,19 @@ l4 <- function(x,y){
 
 # creating matrix
 
-lin <-as.data.frame(matrix(data=as.numeric(0), nrow = 4, ncol = 2))
-colnames(lin) <- c("C_value","slope" )
-rownames(lin) <- c("line 1", "line 2","line 3","line 4")
+# lin <-as.data.frame(matrix(data=as.numeric(0), nrow = 4, ncol = 2))
+# colnames(lin) <- c("C_value","slope" )
+# rownames(lin) <- c("line 1", "line 2","line 3","line 4")
 
-lin[1,1] <- (x1*y2 - x2*y1)
-lin[1,2] <- (y1-y2)/(x1-x2)
-lin[2,1] <- (y1-y2)*x3 - (x2 - x1)*y3
-lin[2,2] <- (y3-y4)/(x3-x4)
-lin[3,1] <- (y2-y1)*y3 - (x1-x2)*x3
-lin[3,2] <- (y2-y3)/(x2-x3)
-lin[4,1] <- (y2-y1)*y2 - (x1-x2)*x2
-lin[4,2] <- (y4-y1)/(x4-x1)
-
+# lin[1,1] <- (x1*y2 - x2*y1)
+# lin[1,2] <- (y1-y2)/(x1-x2)
+# lin[2,1] <- (y1-y2)*x3 - (x2 - x1)*y3
+# lin[2,2] <- (y3-y4)/(x3-x4)
+# lin[3,1] <- (y2-y1)*y3 - (x1-x2)*x3
+# lin[3,2] <- (y2-y3)/(x2-x3)
+# lin[4,1] <- (y2-y1)*y2 - (x1-x2)*x2
+# lin[4,2] <- (y4-y1)/(x4-x1)
+# 
 
 
 # l1 <- function(x,y){
