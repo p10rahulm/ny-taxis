@@ -280,4 +280,39 @@ rm(east_manhattan,east_river,hudson_river,hudson_river_line,north_manhattan,sout
 
 intrabucket_frequency <- table(train$pickup_map_buckets, train$dropoff_map_buckets)
 
+# ---------------------
+# Intrabucket transfer
+# ---------------------
+intrabucket_transfer <- function(x, y){
 
+  if (train$pickup_map_buckets == train$dropoff_map_buckets){
+ 
+  x1 <- train$pickup_map_buckets_long
+  y1 <- train$pickup_map_buckets_lat
+  x2 <- train$dropoff_map_buckets_long
+  y2 <- train$dropoff_map_buckets_lat
+  
+  # IMPLETMENT FOR LOOPS
+  
+  result <- list(c(x1, y1))   
+  
+  if( y1 < y2) 
+  {
+    # for()
+    result <- append(result, c(x1, y1 + 1))
+  }
+  if(y1 > y2)
+  {
+    result <- append(result, c(x1, y1 - 1))
+  }
+  if(x1 < x2) 
+  {  
+    result <- append(result, c(x1 + 1, y2))
+  }
+  if(x1 > x2) 
+  {  
+    result <- append(result, c(x1 - 1, y2))
+  }
+  
+}
+}
