@@ -37,3 +37,46 @@ give_col_no <- function(mb,ln,lt,is_ss){
   if(is_ss){return(2*(110*(mb-1)+11*(ln-1)+lt))}
   else{return(2*(110*(mb-1)+11*(ln-1)+lt)-1)}
 }
+
+
+# ---------------------
+# Intrabucket transfer
+# ---------------------
+
+
+give_intrabucket_path <- function(pickup_map_buckets,pickup_longitude,pickup_latitude,dropoff_map_buckets,dropoff_longitude,dropoff_latitude){
+  output <- c()
+  if(pickup_latitude!=dropoff_latitude){
+    for(i in (pickup_latitude + (dropoff_latitude >pickup_latitude) - (dropoff_latitude<pickup_latitude)):dropoff_latitude){
+      output <- c(output,give_col_no(pickup_map_buckets,pickup_longitude,i,F))
+    }
+  }
+  if(pickup_longitude!=dropoff_longitude){
+    for(i in (pickup_longitude + (dropoff_longitude >pickup_longitude) - (dropoff_longitude<pickup_longitude)):dropoff_longitude){
+      output <- c(output,give_col_no(pickup_map_buckets,i,dropoff_latitude,F))
+    }
+  }
+  output <- output[-length(output)]
+  if(length(output)==0){return(as.numeric(NA))}
+  return(output)
+}
+
+give_intrabucket_path_string <- function(pickup_map_buckets,pickup_longitude,pickup_latitude,dropoff_map_buckets,dropoff_longitude,dropoff_latitude){
+  output <- c()
+  if(pickup_latitude!=dropoff_latitude){
+    for(i in (pickup_latitude + (dropoff_latitude >pickup_latitude) - (dropoff_latitude<pickup_latitude)):dropoff_latitude){
+      output <- c(output,give_col_no(pickup_map_buckets,pickup_longitude,i,F))
+    }
+  }
+  if(pickup_longitude!=dropoff_longitude){
+    for(i in (pickup_longitude + (dropoff_longitude >pickup_longitude) - (dropoff_longitude<pickup_longitude)):dropoff_longitude){
+      output <- c(output,give_col_no(pickup_map_buckets,i,dropoff_latitude,F))
+    }
+  }
+  output <- output[-length(output)]
+  if(length(output)==0){return(as.character(NA))}
+  return(paste(output,collapse = "|"))
+}
+return100cols <- function(vector){
+  return(c(vector,rep(as.numeric(NA),100-length(vector))))
+}
