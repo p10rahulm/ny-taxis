@@ -336,16 +336,16 @@ rm(start_matrix,drop_matrix)
 # ---------------------
 
 
-give_intrabucket_path <- function(pmb,pln,plt,dmb,dln,dlt){
+give_intrabucket_path <- function(pickup_map_buckets,pickup_longitude,pickup_latitude,dropoff_map_buckets,dropoff_longitude,dropoff_latitude){
   output <- c()
-  if(plt!=dlt){
-    for(i in (plt + (dlt >plt) - (dlt<plt)):dlt){
-        output <- c(output,give_col_no(pmb,pln,i,F))
+  if(pickup_latitude!=dropoff_latitude){
+    for(i in (pickup_latitude + (dropoff_latitude >pickup_latitude) - (dropoff_latitude<pickup_latitude)):dropoff_latitude){
+        output <- c(output,give_col_no(pickup_map_buckets,pickup_longitude,i,F))
     }
   }
-  if(pln!=dln){
-    for(i in (pln + (dln >pln) - (dln<pln)):dln){
-      output <- c(output,give_col_no(pmb,i,dlt,F))
+  if(pickup_longitude!=dropoff_longitude){
+    for(i in (pickup_longitude + (dropoff_longitude >pickup_longitude) - (dropoff_longitude<pickup_longitude)):dropoff_longitude){
+      output <- c(output,give_col_no(pickup_map_buckets,i,dropoff_latitude,F))
     }
   }
   output <- output[-length(output)]
