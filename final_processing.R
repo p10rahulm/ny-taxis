@@ -13,6 +13,7 @@ library(Matrix)
 # ---------------
 # # Load files afresh
 # ---------------
+
 load(file = "rawdata/train.bin")
 load(file = "rawdata/test.bin")
 load(file = "rawdata/validation.bin")
@@ -85,7 +86,10 @@ mapbuckets <- read.csv("rawdata/mapbuckets_boundaries.csv")
 # ---------------------------
 # Getmapbuckets
 # ---------------------------
-# Pickup
+
+# Moves through external mapbuckets.csv of mapbucket boundary coordinates
+
+# Pickup:
 train$pickup_map_buckets <- as.numeric(0)
 
 for(i in 1:nrow(mapbuckets)){
@@ -94,7 +98,7 @@ for(i in 1:nrow(mapbuckets)){
 }
 
 
-# Dropoff
+# Dropoff:
 train$dropoff_map_buckets <- as.numeric(0)
 
 for(i in 1:nrow(mapbuckets)){
@@ -102,14 +106,15 @@ for(i in 1:nrow(mapbuckets)){
           (train$dropoff_latitude <= mapbuckets$LatMax[i] & train$dropoff_latitude >  mapbuckets$LatMin[i]),"dropoff_map_buckets" ] <- i
 }
 
-
 # ---------------------------
 # get pickup_map_buckets_lat+long for buckets 1-8
 # ---------------------------
 
+# initialization of pickup long/lat
 
 train$pickup_map_buckets_lat <- as.numeric(0)
 train$pickup_map_buckets_long <- as.numeric(0)
+
 for(i in 1:(nrow(mapbuckets)-1)){
   train[train$pickup_map_buckets==i,]$pickup_map_buckets_long <- ceiling((train[train$pickup_map_buckets==i,]$pickup_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
   train[train$pickup_map_buckets==i,]$pickup_map_buckets_lat <- ceiling((train[train$pickup_map_buckets==i,]$pickup_latitude-mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
@@ -120,13 +125,18 @@ rm(i)
 # get dropoff_map_buckets_lat+long for buckets 1-8
 # ---------------------------
 
+# initialization of pickup long/lat
 
 train$dropoff_map_buckets_lat <- as.numeric(0)
 train$dropoff_map_buckets_long <- as.numeric(0)
+
 for(i in 1:(nrow(mapbuckets)-1)){
   train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_long <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
   train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_lat <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_latitude-mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
 }
+
+#removing unnessacary variable i
+
 rm(i)
 
 
@@ -135,6 +145,8 @@ rm(i)
 # ---------------------------
 # Get Lines 9,10,11 for new jersey, brooklyn and manhattan respectively
 # ---------------------------
+
+# three different sets of coordinates to illustrate the boundaries of Manhattan Island...Hudson being the west boundary
 
 hudson_river <- list(x1=-73.90502,y1=40.90157,x2 = -74.04785,y2 = 40.70094)
 east_river <- list(x1=-73.856652,y1=40.88322,x2 = -73.99086,y2 = 40.69521)
@@ -148,6 +160,9 @@ south_boundary_line <- generate_line(south_boundary$x1,south_boundary$y1,south_b
 # ---------------------------
 # Split New jersey away
 # ---------------------------
+
+# Area that lies above Hudson river (New Jersey) it split away from Manhattan island
+
 # Pickups
 train[train$pickup_map_buckets==9 & is_point_above(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
                                             train$pickup_longitude,train$pickup_latitude),]$pickup_map_buckets <- 10
@@ -160,13 +175,15 @@ train[train$dropoff_map_buckets==9 & is_point_above(hudson_river_line$a,hudson_r
 # ---------------------------
 # Split manhattan away
 # ---------------------------
+
+# Area between all three boundary lines (Hudson, East, and South) is designated as Manhattan Island
+
 # Pickups
 train[train$pickup_map_buckets==9 & 
         is_point_above(south_boundary_line$a,south_boundary_line$b,south_boundary_line$c,
                        train$pickup_longitude,train$pickup_latitude) & 
         is_point_above(east_river_line$a,east_river_line$b,east_river_line$c,
                        train$pickup_longitude,train$pickup_latitude),]$pickup_map_buckets <- 11
-
 
 # Dropoff
 train[train$dropoff_map_buckets==9 & 
@@ -175,10 +192,12 @@ train[train$dropoff_map_buckets==9 &
         is_point_above(east_river_line$a,east_river_line$b,east_river_line$c,
                        train$dropoff_longitude,train$dropoff_latitude),]$dropoff_map_buckets <- 11
 
-
 # ---------------------------
 # Get subbuckets for new jersey and brooklyn
 # ---------------------------
+
+# Subbucketing for NJ and Brooklyn
+
 # Pickups
 for(i in 9:10){
   longmax <- min(train[train$pickup_map_buckets==i,]$pickup_longitude) 
@@ -199,19 +218,21 @@ for(i in 9:10){
   train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_lat <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_latitude-latmin)/((latmax-latmin)/10))
 }
 
-
+# removing unnessacary variables
 
 rm(latmax,latmin,longmax,longmin,i)
 rm(south_boundary_line,east_river_line)
+
 # ---------------------------
 # Removing unnecessary points
 # ---------------------------
+
 # Pickups
 train <- train[train$pickup_map_buckets!=0,]
 train <- train[train$pickup_map_buckets == 11 | train$pickup_map_buckets_lat !=0,]
 train <- train[train$pickup_map_buckets == 11 | train$pickup_map_buckets_long !=0,]
 
-# dropoffs
+# Dropoffs
 train <- train[train$dropoff_map_buckets!=0,]
 train <- train[train$dropoff_map_buckets == 11 | train$dropoff_map_buckets_lat !=0,]
 train <- train[train$dropoff_map_buckets == 11 | train$dropoff_map_buckets_long !=0,]
@@ -226,13 +247,14 @@ train <- train[train$dropoff_map_buckets == 11 | train$dropoff_map_buckets_long 
 east_manhattan <- parallel_line_thru_point(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
                                            east_river$x1,east_river$y1)
 
+# Get perpendicular lines through east and hudson
+
 north_manhattan <- perpendicular_line_thru_point(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
                                                  east_river$x1,east_river$y1)
 
 
 south_manhattan <- perpendicular_line_thru_point(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
                                                  east_river$x2,east_river$y2)
-
 
 # ---------------------------
 # Generate subbuckets for Manhattan
@@ -264,23 +286,22 @@ train[train$dropoff_map_buckets == 11,]$dropoff_map_buckets_lat <- ceiling(perpe
                                                                                                            south_manhattan$a,south_manhattan$b,south_manhattan$c))
 
 
+#removing unnessacary variables
+
 rm(east_manhattan,east_river,hudson_river,hudson_river_line,north_manhattan,south_boundary,south_manhattan)
 
-
-
-
-# --------------
+# ----------------
 # checking frequency of travel between major map_buckets
-# --------------
+# ----------------
+
 train$is_intra_bucket <- train$pickup_map_buckets == train$dropoff_map_buckets
 intrabucket_frequency <- as.data.frame.matrix(table(train$pickup_map_buckets, train$dropoff_map_buckets))
-
-
-
 
 # --------------
 # Create all possible groups and subgroups
 # --------------
+
+#path matrix count of if a bucket passes through another or 
 
 numcol <- max(train$pickup_map_buckets,train$dropoff_map_buckets)*
   max(train$pickup_map_buckets_long,train$dropoff_map_buckets_long)*
@@ -293,7 +314,7 @@ for(mb in (1:max(train$pickup_map_buckets,train$dropoff_map_buckets))){
     for(lt in (1:max(train$pickup_map_buckets_lat,train$dropoff_map_buckets_lat))){
       
       mblnlt1 <- paste0("thru_g",mb,"ln",ln,"lt",lt)
-      mblnlt2 <- paste0("ss_g",mb,"ln",ln,"lt",lt)
+      mblnlt2 <- paste0("ss_g",mb,"ln",ln,"lt",lt)    # what is this?
       columnnames[i] <- mblnlt1
       columnnames[i+1] <- mblnlt2
       i = i+2
@@ -301,6 +322,7 @@ for(mb in (1:max(train$pickup_map_buckets,train$dropoff_map_buckets))){
   }
 }
 rm(i,mblnlt1,mblnlt2,ln,lt,mb)
+
 path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,
                       dimnames = list(as.character(seq(1,nrow(train))),columnnames))
 # rm(numcol,columnnames)
@@ -315,9 +337,13 @@ path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byr
 # path_matrix[,paste0("ss_g",train$pickup_map_buckets,"ln",train$pickup_map_buckets_long,"lt",train$pickup_map_buckets_lat)] <- 1
 # path_matrix[,paste0("ss_g",train$dropoff_map_buckets,"ln",train$dropoff_map_buckets_long,"lt",train$dropoff_map_buckets_lat)] <- 1
 
+#sparse matrix of the starting point
+
 start_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$pickup_map_buckets,train$pickup_map_buckets_long,train$pickup_map_buckets_lat,T), 
              x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
             )
+
+#sparse matrix of the drop point
 
 drop_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$dropoff_map_buckets,train$dropoff_map_buckets_long,train$dropoff_map_buckets_lat,T), 
                              x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
@@ -326,15 +352,11 @@ drop_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$dropoff_map
 path_matrix <- start_matrix + drop_matrix
 rm(start_matrix,drop_matrix)
 
-
-
-
-
-
 # ---------------------
 # Intrabucket transfer
 # ---------------------
 
+# intrabucket movement, moves down or up and then to the right or left based on pick up and drop off point
 
 give_intrabucket_path <- function(pickup_map_buckets,pickup_longitude,pickup_latitude,dropoff_map_buckets,dropoff_longitude,dropoff_latitude){
   output <- c()
@@ -355,50 +377,4 @@ give_intrabucket_path <- function(pickup_map_buckets,pickup_longitude,pickup_lat
 
 # start_matrix[1,2352:2355]
 
-
-
-# ---------------------
-# Intrabucket transfer
-# ---------------------
-intrabucket_transfer <- function(x, y){
-
-  if (train$pickup_map_buckets == train$dropoff_map_buckets){
- 
-  x1 <- train$pickup_map_buckets_long
-  y1 <- train$pickup_map_buckets_lat
-  x2 <- train$dropoff_map_buckets_long
-  y2 <- train$dropoff_map_buckets_lat
-  
- 
-  
-  result <- list(c(x1, y1))   
-  
-  if( y1 < y2) 
-  {
-    while(y1 < y2){
-  
-    result <- append(result, c(x1, y1 + 1))
-    }
-  }
-  if(y1 > y2){
-    while(y1 > y2){
-  
-    result <- append(result, c(x1, y1 - 1))
-  }
-    }
-  if(x1 < x2) {
-    while(x1 < x2){
-      
-    result <- append(result, c(x1 + 1, y2))
-  }
-      }
-  if(x1 > x2){
-    while(x1 > x2){
-      
-    result <- append(result, c(x1 - 1, y2))
-  }
-  
-}
-    }
-}
 
