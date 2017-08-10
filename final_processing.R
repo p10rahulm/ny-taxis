@@ -5,6 +5,7 @@ rm(list = ls())
 library(data.table)
 source("functions.R")
 library(caTools)
+library(Matrix)
 
 # library(ggplot2)
 # library(ggmap)
@@ -200,8 +201,8 @@ for(i in 9:10){
 
 
 
-# rm(latmax,latmin,longmax,longmin,i)
-# rm(south_boundary_line,east_river_line)
+rm(latmax,latmin,longmax,longmin,i)
+rm(south_boundary_line,east_river_line)
 # ---------------------------
 # Removing unnecessary points
 # ---------------------------
@@ -273,6 +274,68 @@ rm(east_manhattan,east_river,hudson_river,hudson_river_line,north_manhattan,sout
 # --------------
 train$is_intra_bucket <- train$pickup_map_buckets != train$dropoff_map_buckets
 intrabucket_frequency <- as.data.frame.matrix(table(train$pickup_map_buckets, train$dropoff_map_buckets))
+
+
+
+
+# --------------
+# Create all possible groups and subgroups
+# --------------
+
+# for(mb in (min(train$pickup_map_buckets,train$dropoff_map_buckets):max(train$pickup_map_buckets,train$dropoff_map_buckets))){
+#   for(ln in (min(train$pickup_map_buckets_long[train$pickup_map_buckets==mb],
+#                  train$dropoff_map_buckets_long[train$dropoff_map_buckets==mb]):
+#              max(train$pickup_map_buckets_long[train$pickup_map_buckets==mb],
+#                  train$dropoff_map_buckets_long[train$dropoff_map_buckets==mb]))){
+#     for(lt in (min(train$pickup_map_buckets_lat[train$pickup_map_buckets==mb],
+#                    train$dropoff_map_buckets_lat[train$dropoff_map_buckets==mb]):
+#                max(train$pickup_map_buckets_lat[train$pickup_map_buckets==mb],
+#                    train$dropoff_map_buckets_lat[train$dropoff_map_buckets==mb]))){
+#       
+#       mblnlt1 <- paste0("thru_g",mb,"ln",ln,"lt",lt)
+#       mblnlt2 <- paste0("ss_g",mb,"ln",ln,"lt",lt)
+#       print(mblnlt1)
+#       train[,mblnlt1] <- as.logical(F)
+#       train[,mblnlt2] <- as.logical(F)
+#     }
+#   }
+# }
+
+
+numcol <- max(train$pickup_map_buckets,train$dropoff_map_buckets)*
+  max(train$pickup_map_buckets_long,train$dropoff_map_buckets_long)*
+  max(train$pickup_map_buckets_lat,train$dropoff_map_buckets_lat)
+
+columnnames = rep("",2*numcol)
+i=1
+for(mb in (1:max(train$pickup_map_buckets,train$dropoff_map_buckets))){
+  for(ln in (1:max(train$pickup_map_buckets_long,train$dropoff_map_buckets_long))){
+    for(lt in (1:max(train$pickup_map_buckets_lat,train$dropoff_map_buckets_lat))){
+      
+      mblnlt1 <- paste0("thru_g",mb,"ln",ln,"lt",lt)
+      mblnlt2 <- paste0("ss_g",mb,"ln",ln,"lt",lt)
+      columnnames[i] <- mblnlt1
+      columnnames[i+1] <- mblnlt2
+      i = i+2
+    }
+  }
+}
+rm(i,mblnlt1,mblnlt2,ln,lt,mb)
+a <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,dimnames = list(as.character(seq(1,nrow(train))),columnnames))
+rm(numcol,columnnames)
+
+
+# ---------------------
+# Merge training with mbll
+# ---------------------
+
+train$rowno <- seq(1,nrow(train),1)
+
+setkey(train,"rowno")
+setkey(mbll,"rowno")
+
+train <- merge(x= train,y=mbll,by.x = "rowno",by.y = "rowno",all.x = T)
+rm(mbll)
 
 # ---------------------
 # Intrabucket transfer
