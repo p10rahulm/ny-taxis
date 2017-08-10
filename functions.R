@@ -33,3 +33,7 @@ perpendicular_distance_from_point_to_line <- function(a,b,c,x,y){
   return(output)
 }
 
+give_col_no <- function(mb,ln,lt,is_ss){
+  if(is_ss){return(2*(110*(mb-1)+11*(ln-1)+lt))}
+  else{return(2*(110*(mb-1)+11*(ln-1)+lt)-1)}
+}

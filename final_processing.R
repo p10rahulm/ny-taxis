@@ -301,7 +301,8 @@ for(mb in (1:max(train$pickup_map_buckets,train$dropoff_map_buckets))){
   }
 }
 rm(i,mblnlt1,mblnlt2,ln,lt,mb)
-path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,dimnames = list(as.character(seq(1,nrow(train))),columnnames))
+path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,
+                      dimnames = list(as.character(seq(1,nrow(train))),columnnames))
 # rm(numcol,columnnames)
 
 
@@ -314,20 +315,42 @@ path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byr
 # path_matrix[,paste0("ss_g",train$pickup_map_buckets,"ln",train$pickup_map_buckets_long,"lt",train$pickup_map_buckets_lat)] <- 1
 # path_matrix[,paste0("ss_g",train$dropoff_map_buckets,"ln",train$dropoff_map_buckets_long,"lt",train$dropoff_map_buckets_lat)] <- 1
 
-start_matrix <- sparseMatrix(i = 1:nrow(train), j = 2*((train$pickup_map_buckets-1)*110 + 
-                                     (train$pickup_map_buckets_long-1)*11 +
-                                     train$pickup_map_buckets_lat), 
+start_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$pickup_map_buckets,train$pickup_map_buckets_long,train$pickup_map_buckets_lat,T), 
              x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
             )
 
-drop_matrix <- sparseMatrix(i = 1:nrow(train), j = 2*((train$dropoff_map_buckets-1)*110 + 
-                                                         (train$dropoff_map_buckets_long-1)*11 +
-                                                         train$dropoff_map_buckets_lat), 
+drop_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$dropoff_map_buckets,train$dropoff_map_buckets_long,train$dropoff_map_buckets_lat,T), 
                              x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
-)
+                )
+
 path_matrix <- start_matrix + drop_matrix
+rm(start_matrix,drop_matrix)
 
 
+
+
+
+
+# ---------------------
+# Intrabucket transfer
+# ---------------------
+
+
+give_intrabucket_path <- function(pmb,pln,plt,dmb,dln,dlt){
+  output <- c()
+  if(plt!=dlt){
+    for(i in (plt + (dlt >plt) - (dlt<plt)):dlt){
+        output <- c(output,give_col_no(pmb,pln,i,F))
+    }
+  }
+  if(pln!=dln){
+    for(i in (pln + (dln >pln) - (dln<pln)):dln){
+      output <- c(output,give_col_no(pmb,i,dlt,F))
+    }
+  }
+  output <- output[-length(output)]
+  return(output)
+}
 
 
 # start_matrix[1,2352:2355]
