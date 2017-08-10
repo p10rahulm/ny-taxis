@@ -272,7 +272,7 @@ rm(east_manhattan,east_river,hudson_river,hudson_river_line,north_manhattan,sout
 # --------------
 # checking frequency of travel between major map_buckets
 # --------------
-train$is_intra_bucket <- train$pickup_map_buckets != train$dropoff_map_buckets
+train$is_intra_bucket <- train$pickup_map_buckets == train$dropoff_map_buckets
 intrabucket_frequency <- as.data.frame.matrix(table(train$pickup_map_buckets, train$dropoff_map_buckets))
 
 
@@ -281,26 +281,6 @@ intrabucket_frequency <- as.data.frame.matrix(table(train$pickup_map_buckets, tr
 # --------------
 # Create all possible groups and subgroups
 # --------------
-
-# for(mb in (min(train$pickup_map_buckets,train$dropoff_map_buckets):max(train$pickup_map_buckets,train$dropoff_map_buckets))){
-#   for(ln in (min(train$pickup_map_buckets_long[train$pickup_map_buckets==mb],
-#                  train$dropoff_map_buckets_long[train$dropoff_map_buckets==mb]):
-#              max(train$pickup_map_buckets_long[train$pickup_map_buckets==mb],
-#                  train$dropoff_map_buckets_long[train$dropoff_map_buckets==mb]))){
-#     for(lt in (min(train$pickup_map_buckets_lat[train$pickup_map_buckets==mb],
-#                    train$dropoff_map_buckets_lat[train$dropoff_map_buckets==mb]):
-#                max(train$pickup_map_buckets_lat[train$pickup_map_buckets==mb],
-#                    train$dropoff_map_buckets_lat[train$dropoff_map_buckets==mb]))){
-#       
-#       mblnlt1 <- paste0("thru_g",mb,"ln",ln,"lt",lt)
-#       mblnlt2 <- paste0("ss_g",mb,"ln",ln,"lt",lt)
-#       print(mblnlt1)
-#       train[,mblnlt1] <- as.logical(F)
-#       train[,mblnlt2] <- as.logical(F)
-#     }
-#   }
-# }
-
 
 numcol <- max(train$pickup_map_buckets,train$dropoff_map_buckets)*
   max(train$pickup_map_buckets_long,train$dropoff_map_buckets_long)*
@@ -321,21 +301,38 @@ for(mb in (1:max(train$pickup_map_buckets,train$dropoff_map_buckets))){
   }
 }
 rm(i,mblnlt1,mblnlt2,ln,lt,mb)
-a <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,dimnames = list(as.character(seq(1,nrow(train))),columnnames))
-rm(numcol,columnnames)
+path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,dimnames = list(as.character(seq(1,nrow(train))),columnnames))
+# rm(numcol,columnnames)
 
 
-# ---------------------
-# Merge training with mbll
-# ---------------------
+# for(i in 1:nrow(train)){
+#   path_matrix[i,paste0("ss_g",train[i,"pickup_map_buckets"],"ln",train[i,"pickup_map_buckets_long"],"lt",train[i,"pickup_map_buckets_lat"])] <- 1
+#   path_matrix[i,paste0("ss_g",train[i,"dropoff_map_buckets"],"ln",train[i,"dropoff_map_buckets_long"],"lt",train[i,"dropoff_map_buckets_lat"])] <- 1
+# }
 
-train$rowno <- seq(1,nrow(train),1)
+# pickupcols <- paste0("ss_g",train$pickup_map_buckets,"ln",train$pickup_map_buckets_long,"lt",train$pickup_map_buckets_lat)
+# path_matrix[,paste0("ss_g",train$pickup_map_buckets,"ln",train$pickup_map_buckets_long,"lt",train$pickup_map_buckets_lat)] <- 1
+# path_matrix[,paste0("ss_g",train$dropoff_map_buckets,"ln",train$dropoff_map_buckets_long,"lt",train$dropoff_map_buckets_lat)] <- 1
 
-setkey(train,"rowno")
-setkey(mbll,"rowno")
+start_matrix <- sparseMatrix(i = 1:nrow(train), j = 2*((train$pickup_map_buckets-1)*110 + 
+                                     (train$pickup_map_buckets_long-1)*11 +
+                                     train$pickup_map_buckets_lat), 
+             x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
+            )
 
-train <- merge(x= train,y=mbll,by.x = "rowno",by.y = "rowno",all.x = T)
-rm(mbll)
+drop_matrix <- sparseMatrix(i = 1:nrow(train), j = 2*((train$dropoff_map_buckets-1)*110 + 
+                                                         (train$dropoff_map_buckets_long-1)*11 +
+                                                         train$dropoff_map_buckets_lat), 
+                             x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
+)
+path_matrix <- start_matrix + drop_matrix
+
+
+
+
+# start_matrix[1,2352:2355]
+
+
 
 # ---------------------
 # Intrabucket transfer
