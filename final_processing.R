@@ -4,7 +4,7 @@
 # ---------------
 rm(list = ls())
 library(data.table)
-source("distance_functions.R")
+source("functions.R")
 library(caTools)
 
 library(ggplot2)
@@ -82,17 +82,18 @@ mapbuckets <- read.csv("rawdata/mapbuckets_boundaries.csv")
 # ---------------------------
 # Getmapbuckets
 # ---------------------------
-train$map_buckets <- as.integer(0)
+train$map_buckets <- as.numeric(0)
 for(i in 1:nrow(mapbuckets)){
-  train[(train$pickup_longitude < mapbuckets$LongMin[i] & train$pickup_longitude >= mapbuckets$LongMax[i]) & (train$pickup_latitude <= mapbuckets$LatMax[i] & train$pickup_latitude >  mapbuckets$LatMin[i]),"map_buckets" ] <- i
+  train[(train$pickup_longitude < mapbuckets$LongMin[i] & train$pickup_longitude >= mapbuckets$LongMax[i]) & 
+          (train$pickup_latitude <= mapbuckets$LatMax[i] & train$pickup_latitude >  mapbuckets$LatMin[i]),"map_buckets" ] <- i
 }
 
 # ---------------------------
 # getmap_buckets_lat+long for buckets 1-8
 # ---------------------------
 
-train$map_buckets_lat <- as.integer(0)
-train$map_buckets_long <- as.integer(0)
+train$map_buckets_lat <- as.numeric(0)
+train$map_buckets_long <- as.numeric(0)
 
 for(i in 1:(nrow(mapbuckets)-1)){
     train[train$map_buckets==i,]$map_buckets_long <- ceiling((train[train$map_buckets==i,]$pickup_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
@@ -185,148 +186,7 @@ train[train$map_buckets == 11,]$map_buckets_lat <- ceiling(perpendicular_distanc
 
 
 
-
-
-# -----------------
-# # Subbucket function
-# -----------------
-# Keep in mind, change in x is going to be change in longitude and change in y is going to be change in latitude
-# i is long j is latitude
-
-bucket_array <- function(bucket,i,j){
-   if(bucket == 1){
-  subbucket_x <- ceiling((i-74.24602)/(-74.04785--74.24602))*10
-  subbucket_y<- ceiling((j-40.988000)/( 40.901577492-40.988000))*10
-  return  (list(bucket,subbucket_x, subbucket_y))
-   }
-  if(bucket == 2){
-    subbucket_x <- ceiling((i--74.24602)/(-74.04785--74.24602))*10
-    subbucket_y <- ceiling((j- 40.901577492)/(40.700768- 40.901577492))*10
-    return(list(bucket,subbucket_x, subbucket_y))
-  }
-  if(bucket == 3){
-    subbucket_x <- ceiling((i--74.24602)/(-74.04785--74.24602))*10
-    subbucket_y <- ceiling((j-40.700768)/(40.41323-40.700768))*10
-    return(list(bucket,subbucket_x, subbucket_y))
-  }
-  if(bucket == 4){
-    subbucket_x <- ceiling((i--74.04785)/(-73.915957--74.04785))*10
-    subbucket_y <- ceiling((j-40.700768)/(40.41323-40.700768))*10
-    return(list(bucket,subbucket_x, subbucket_y))
-  }
-  if(bucket == 5){
-    subbucket_x <- ceiling((i--73.915957)/(-73.49034--73.915957))*10
-    subbucket_y <- ceiling((j-40.700780)/(40.41323-40.700780))*10
-    return(list(bucket,subbucket_x, subbucket_y))
-  }
-  if(bucket == 6){
-    subbucket_x <- ceiling((i--73.915957)/(-73.49034--73.915957))*10
-    subbucket_y <- ceiling((j- 40.901577492)/(40.700780- 40.901577492))*10
-    return(list(bucket,subbucket_x, subbucket_y))
-  }
-  if(bucket == 7){
-    subbucket_x <- ceiling((i--73.915957)/(-73.49034--73.915957))*10
-    subbucket_y <- ceiling((j-40.988000)/( 40.901577492-40.988000))*10
-    return(list(bucket,subbucket_x, subbucket_y))
-  }
-  if(bucket == 8){
-    subbucket_x <- ceiling((i--74.04785)/(-74.04785--73.915957))*10
-    subbucket_y <- ceiling((j-40.988000)/( 40.901577492-40.988000))*10
-    return (list(bucket,subbucket_x, subbucket_y))
-  }
-  # if(bucket == 9){
-  #   subbucket_x <- ceiling((i--74.04785)/(-73.915957--74.04785))*10
-  #   subbucket_y <- ceiling((j- 40.901577492)/(40.700768- 40.901577492))*10
-  #   return(bucket,subbucket_x, subbucket_y)
-  # }
-  else{ #for anything in bucket 9
-    return (0)
-  }
-}
-
-bucket_arrays <- bucket_array(train$map_buckets,train$pickup_longitude,train$pickup_latitude)
-
-
-# ---------------
-# # Manhattan grid
-# ---------------
-
-# variable labels:
-
-x1 <- 40.70094
-y1 <- -74.04785
-x2 <- 40.90157
-y2 <- -73.90502
-x3 <- 40.88323
-y3 <- -73.85665
-x4 <- 40.69521
-y4 <- -73.99086
-
-
-# (py – qy)x + (qx – px)y + (pxqy – qxpy) = 0
-# (y1-y2)x + (x2-x1)y + (x1*y2 - x2*y1) = 0
-
-# lines have been GRAPHED
-
-l1 <- function(x,y){
-  # 0.0905x + 0.139188y +(-13.98926) = 0
-  return ((y1-y2)*x + (x2-x1)*y +(x1*y2 - x2*y1))
-}
-
-l2 <- function(x,y){
-  # perpendicular line...
-  # (qx – px)*x + (py – qy)*y - ((qx – px)*x3 - (py – qy)*y3)
-  # (y2-y1)*x + (x1-x2)*y - ((y1-y2)*x3 - (x2 - x1)*y3) = 0
-  return ((y2-y1)*x + (x1-x2)*y - ((y1-y2)*x3 - (x2 - x1)*y3))
-}
-
-l3 <- function(x,y){
-  # (x1-x2)*x - (y2-y1)*y + ((y2-y1)*y3 - (x1-x2)*x3)
-  # return((x1-x2)*x - (y2-y1)*y + ((y2-y1)*y3 - (x1-x2)*x3))
-  # this was wrong
-  return ((y2-y3)*x + (x3-x2)*y +(x2*y3 - x3*y2) )
-  
-}
-
-l4 <- function(x,y){
-  # return ((x1-x2)*x - (y2-y1)*y + ((y2-y1)*y2 - (x1-x2)*x2))
-  # (y2-y3)*x + (x3-x2)*y +((y2-y3)*x1 - (x3-x2)*y1) = 0
-  # (y1-y2)x - (x2-x1)y + ((y1-y2)*y1 - (x2-x1)*x1) = 0
-  
-  # equation posed by Rahul...gives me perpendicular 
-  # (x2-x1)*y -(y1-y2)*y + ((y1-y2)*y1-((x2-x1)*x1)
-}
-
-# creating matrix
-
-lin <-as.data.frame(matrix(data=as.numeric(0), nrow = 4, ncol = 2))
-colnames(lin) <- c("C_value","slope" )
-rownames(lin) <- c("line 1", "line 2","line 3","line 4")
-
-lin[1,1] <- (x1*y2 - x2*y1)
-lin[1,2] <- (y1-y2)/(x1-x2)
-lin[2,1] <- (y1-y2)*x3 - (x2 - x1)*y3
-lin[2,2] <- (y3-y4)/(x3-x4)
-lin[3,1] <- (y2-y1)*y3 - (x1-x2)*x3
-lin[3,2] <- (y2-y3)/(x2-x3)
-lin[4,1] <- (y2-y1)*y2 - (x1-x2)*x2
-lin[4,2] <- (y4-y1)/(x4-x1)
-
-
-
-# l1 <- function(x,y){
-#   m <- ((y1-y3)/(x1-x3)) 
-#   b <- y3-(m)*x3
-#   return ((m*x)-y+b)
-# }
-
-line_equation <- function(line_number, x, y){
-  return((lin[line_number,1]*x)+(lin[line_number,2]*y)+(lin[line_number,3]))
-}
-
-
-
-
+rm(east_manhattan,east_river,hudson_river,hudson_river_line,north_manhattan,south_boundary,south_manhattan)
 
 
 
