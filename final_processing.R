@@ -343,10 +343,10 @@ rm(start_matrix,drop_matrix)
 #                                           "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T))
 
 path <- mapply(FUN = give_intrabucket_path,"pickup_map_buckets" = train$pickup_map_buckets,"pickup_longitude" = train$pickup_map_buckets_long,
-              "pickup_latitude" = train$pickup_map_buckets_lat,
-              "dropoff_map_buckets" =  train$dropoff_map_buckets,
-              "dropoff_longitude" = train$dropoff_map_buckets_long,
-              "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T)
+               "pickup_latitude" = train$pickup_map_buckets_lat,
+               "dropoff_map_buckets" =  train$dropoff_map_buckets,
+               "dropoff_longitude" = train$dropoff_map_buckets_long,
+               "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T)
 
 path <- mapply(FUN = return100cols,vector=path,SIMPLIFY = T)
 path <- t(path)
