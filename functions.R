@@ -61,6 +61,33 @@ give_intrabucket_path <- function(pickup_map_buckets,pickup_longitude,pickup_lat
   return(output)
 }
 
+give_path <- function(pickup_map_buckets,pickup_longitude,pickup_latitude,
+                      dropoff_map_buckets,dropoff_longitude,dropoff_latitude,
+                      pickup_bucket_coord,dropoff_bucket_coord
+                      ){
+  if(pickup_map_buckets==dropoff_map_buckets){
+    return(give_intrabucket_path(pickup_map_buckets,pickup_longitude,pickup_latitude,
+                                 dropoff_map_buckets,dropoff_longitude,dropoff_latitude))
+  } 
+  pickupbucket_lon <- as.numeric(unlist(strsplit(as.character(pickup_bucket_coord),"")))[2]
+  pickupbucket_lat <- as.numeric(unlist(strsplit(as.character(pickup_bucket_coord),"")))[1]
+  dropbucket_lon <- as.numeric(unlist(strsplit(as.character(dropoff_bucket_coord),"")))[2]
+  dropbucket_lat <- as.numeric(unlist(strsplit(as.character(dropoff_bucket_coord),"")))[1]
+  # First the lats
+  
+  
+  if(pickupbucket_lat!=dropbucket_lat){
+    start <- min(pickupbucket_lat,dropbucket_lat)
+    stop <- max(pickupbucket_lat,dropbucket_lat)
+    
+    if(start>stop+1){
+      give_intrabucket_path(pickup_map_buckets,pickup_longitude,pickup_latitude,
+                            dropoff_map_buckets,dropoff_longitude,dropoff_latitude)
+    }
+  }
+  
+}
+
 give_intrabucket_path_string <- function(pickup_map_buckets,pickup_longitude,pickup_latitude,dropoff_map_buckets,dropoff_longitude,dropoff_latitude){
   output <- c()
   if(pickup_latitude!=dropoff_latitude){
@@ -77,6 +104,8 @@ give_intrabucket_path_string <- function(pickup_map_buckets,pickup_longitude,pic
   if(length(output)==0){return(as.character(NA))}
   return(paste(output,collapse = "|"))
 }
+
+
 return100cols <- function(vector){
   return(c(vector,rep(as.numeric(NA),100-length(vector))))
 }

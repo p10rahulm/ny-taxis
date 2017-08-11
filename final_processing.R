@@ -311,18 +311,11 @@ path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byr
 
 
 
-# rm(numcol,columnnames)
 
 
-# for(i in 1:nrow(train)){
-#   path_matrix[i,paste0("ss_g",train[i,"pickup_map_buckets"],"ln",train[i,"pickup_map_buckets_long"],"lt",train[i,"pickup_map_buckets_lat"])] <- 1
-#   path_matrix[i,paste0("ss_g",train[i,"dropoff_map_buckets"],"ln",train[i,"dropoff_map_buckets_long"],"lt",train[i,"dropoff_map_buckets_lat"])] <- 1
-# }
-
-# pickupcols <- paste0("ss_g",train$pickup_map_buckets,"ln",train$pickup_map_buckets_long,"lt",train$pickup_map_buckets_lat)
-# path_matrix[,paste0("ss_g",train$pickup_map_buckets,"ln",train$pickup_map_buckets_long,"lt",train$pickup_map_buckets_lat)] <- 1
-# path_matrix[,paste0("ss_g",train$dropoff_map_buckets,"ln",train$dropoff_map_buckets_long,"lt",train$dropoff_map_buckets_lat)] <- 1
-
+# ----------------------
+# Get the start and dropoff points in the path matrix
+# ----------------------
 start_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$pickup_map_buckets,train$pickup_map_buckets_long,train$pickup_map_buckets_lat,T), 
                              x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
 )
@@ -333,20 +326,58 @@ drop_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$dropoff_map
 
 path_matrix <- path_matrix + start_matrix + drop_matrix
 rm(start_matrix,drop_matrix)
+# ----------------------
+# 
+# Get new column names
+# ----------------------
+# ----------------------
 
+# pickups fresh buckets
+bucket_xy_mapping <- read.csv("rawdata/bucket_xy_mapping.csv")
+train$pickup_bucket_coord <- 11
+train$dropoff_bucket_coord <- 11
+for(i in 1:nrow(bucket_xy_mapping)){
+  train$pickup_bucket_coord[train$pickup_map_buckets==bucket_xy_mapping$MapBuckets[i]] <- bucket_xy_mapping$bucketcoord[i]
+  train$dropoff_bucket_coord[train$dropoff_map_buckets==bucket_xy_mapping$MapBuckets[i]] <- bucket_xy_mapping$bucketcoord[i]
+}
 
+# train$pickup_bucket_coord[train$pickup_map_buckets==8] <- 12
+# train$pickup_bucket_coord[train$pickup_map_buckets==7] <- 13
+# train$pickup_bucket_coord[train$pickup_map_buckets==2] <- 21
+# train$pickup_bucket_coord[train$pickup_map_buckets==10] <- 22
+# train$pickup_bucket_coord[train$pickup_map_buckets==11] <- 23
+# train$pickup_bucket_coord[train$pickup_map_buckets==9] <- 24
+# train$pickup_bucket_coord[train$pickup_map_buckets==6] <- 25
+# train$pickup_bucket_coord[train$pickup_map_buckets==3] <- 31
+# train$pickup_bucket_coord[train$pickup_map_buckets==4] <- 32
+# train$pickup_bucket_coord[train$pickup_map_buckets==5] <- 33
+# # dropoffs fresh buckets
+# train$dropoff_bucket_coord <- 11
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==1] <- 11
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==8] <- 12
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==7] <- 13
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==2] <- 21
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==10] <- 22
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==11] <- 23
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==9] <- 24
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==6] <- 25
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==3] <- 31
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==4] <- 32
+# train$dropoff_bucket_coord[train$dropoff_map_buckets==5] <- 33
+
+intrabucket_frequency2 <- as.data.frame.matrix(table(train$pickup_bucket_coord,train$dropoff_bucket_coord))
+
+# ----------------------
 # Register all paths in a smaller dense matrix to add to the larger one later
-# train$intrabucket_string <- unlist(mapply(FUN = give_intrabucket_path_string,"pickup_map_buckets" = train$pickup_map_buckets,"pickup_longitude" = train$pickup_map_buckets_long,
-#                                           "pickup_latitude" = train$pickup_map_buckets_lat,
-#                                           "dropoff_map_buckets" =  train$dropoff_map_buckets,
-#                                           "dropoff_longitude" = train$dropoff_map_buckets_long,
-#                                           "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T))
+# ----------------------
 
-path <- mapply(FUN = give_intrabucket_path,"pickup_map_buckets" = train$pickup_map_buckets,"pickup_longitude" = train$pickup_map_buckets_long,
+path <- mapply(FUN = give_path,"pickup_map_buckets" = train$pickup_map_buckets,"pickup_longitude" = train$pickup_map_buckets_long,
                "pickup_latitude" = train$pickup_map_buckets_lat,
                "dropoff_map_buckets" =  train$dropoff_map_buckets,
                "dropoff_longitude" = train$dropoff_map_buckets_long,
-               "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T)
+               "dropoff_latitude" = train$dropoff_map_buckets_lat,
+               "pickup_bucket_coord"=train$pickup_bucket_coord,
+               "dropoff_bucket_coord"=train$dropoff_bucket_coord,SIMPLIFY = T)
 
 path <- mapply(FUN = return100cols,vector=path,SIMPLIFY = T)
 path <- t(path)
