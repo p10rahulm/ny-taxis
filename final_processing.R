@@ -36,3 +36,8 @@ test_path <- test_with_path[[2]]
 validation_with_path <- return_path_and_columns(train)
 validation_input <- validation_with_path[[1]]
 validation_path <- validation_with_path[[2]]
+
+# Save all down
+save(train_with_path,file="cleaned/train_with_path.bin")
+save(test_with_path,file="cleaned/test_with_path.bin")
+save(validation_with_path,file="cleaned/validation_with_path.bin")
