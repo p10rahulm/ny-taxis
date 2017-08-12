@@ -247,9 +247,9 @@ return100cols <- function(vector){
 # ---------------
 # Split between training, test and validation
 # ---------------
-return_path_and_columns <- function(train){
+return_path_and_columns <- function(data_frame){
   # Basic data.table mapping
-  train <- data.table(train)
+  data_frame <- data.table(data_frame)
   # test <- data.table(test)
   # validation <- data.table(validation)
   
@@ -257,50 +257,50 @@ return_path_and_columns <- function(train){
   # creating more calculative fields
   # ---------------
   
-  train$distance <- distance_between_points(train$pickup_longitude,train$pickup_latitude,
-                                            train$dropoff_longitude,train$dropoff_latitude)
+  data_frame$distance <- distance_between_points(data_frame$pickup_longitude,data_frame$pickup_latitude,
+                                            data_frame$dropoff_longitude,data_frame$dropoff_latitude)
   
   # # --------------------
   # # # trip duration field in hours
   # # --------------------
-  # train$duration_hours <- train$trip_duration/3600
+  # data_frame$duration_hours <- data_frame$trip_duration/3600
   
   # --------------------
   # # time of day
   # --------------------
-  train$hour_of_day <- as.numeric(substr(train$pickup_datetime,12,13))
-  train$minute <- as.numeric(substr(train$pickup_datetime,15,16))
+  data_frame$hour_of_day <- as.numeric(substr(data_frame$pickup_datetime,12,13))
+  data_frame$minute <- as.numeric(substr(data_frame$pickup_datetime,15,16))
   # # --------------------
   # # # speed
   # # --------------------
   # 
-  # train$speed <- (train$distance / train$duration_hours)
+  # data_frame$speed <- (data_frame$distance / data_frame$duration_hours)
   
   # --------------------
   # # distance buckets
   # --------------------
   
-  train$distance_buckets <- 0
-  train[train$distance < .5,"distance_buckets"] <- 1
-  train[train$distance < 1 & train$distance >= .5,]$distance_buckets <- 2
-  train[train$distance < 2.5 & train$distance >= 1,]$distance_buckets <- 3
-  train[train$distance < 5 & train$distance >= 2.5,]$distance_buckets <- 4
-  train[train$distance < 10 & train$distance >= 5,]$distance_buckets <- 5
-  train[train$distance < 20 & train$distance >= 10,]$distance_buckets <- 6
-  train[train$distance >= 20,]$distance_buckets <- 7
+  data_frame$distance_buckets <- 0
+  data_frame[data_frame$distance < .5,"distance_buckets"] <- 1
+  data_frame[data_frame$distance < 1 & data_frame$distance >= .5,]$distance_buckets <- 2
+  data_frame[data_frame$distance < 2.5 & data_frame$distance >= 1,]$distance_buckets <- 3
+  data_frame[data_frame$distance < 5 & data_frame$distance >= 2.5,]$distance_buckets <- 4
+  data_frame[data_frame$distance < 10 & data_frame$distance >= 5,]$distance_buckets <- 5
+  data_frame[data_frame$distance < 20 & data_frame$distance >= 10,]$distance_buckets <- 6
+  data_frame[data_frame$distance >= 20,]$distance_buckets <- 7
   
   # --------------------
   # # some more processing
   # --------------------
   
-  train$sf <- train$store_and_fwd_flag =="Y"
-  train$store_and_fwd_flag <- NULL
+  data_frame$sf <- data_frame$store_and_fwd_flag =="Y"
+  data_frame$store_and_fwd_flag <- NULL
   
   # ---------------
   # # Create summary buckets
   # ---------------
   
-  train <- data.table(train)
+  data_frame <- data.table(data_frame)
   # ---------------------------
   # Rawdata for mapbuckets
   # ---------------------------
@@ -311,20 +311,20 @@ return_path_and_columns <- function(train){
   # Getmapbuckets
   # ---------------------------
   # Pickup
-  train$pickup_map_buckets <- as.numeric(0)
+  data_frame$pickup_map_buckets <- as.numeric(0)
   
   for(i in 1:nrow(mapbuckets)){
-    train[(train$pickup_longitude < mapbuckets$LongMin[i] & train$pickup_longitude >= mapbuckets$LongMax[i]) & 
-            (train$pickup_latitude <= mapbuckets$LatMax[i] & train$pickup_latitude >  mapbuckets$LatMin[i]),"pickup_map_buckets" ] <- i
+    data_frame[(data_frame$pickup_longitude < mapbuckets$LongMin[i] & data_frame$pickup_longitude >= mapbuckets$LongMax[i]) & 
+            (data_frame$pickup_latitude <= mapbuckets$LatMax[i] & data_frame$pickup_latitude >  mapbuckets$LatMin[i]),"pickup_map_buckets" ] <- i
   }
   
   
   # Dropoff
-  train$dropoff_map_buckets <- as.numeric(0)
+  data_frame$dropoff_map_buckets <- as.numeric(0)
   
   for(i in 1:nrow(mapbuckets)){
-    train[(train$dropoff_longitude < mapbuckets$LongMin[i] & train$dropoff_longitude >= mapbuckets$LongMax[i]) & 
-            (train$dropoff_latitude <= mapbuckets$LatMax[i] & train$dropoff_latitude >  mapbuckets$LatMin[i]),"dropoff_map_buckets" ] <- i
+    data_frame[(data_frame$dropoff_longitude < mapbuckets$LongMin[i] & data_frame$dropoff_longitude >= mapbuckets$LongMax[i]) & 
+            (data_frame$dropoff_latitude <= mapbuckets$LatMax[i] & data_frame$dropoff_latitude >  mapbuckets$LatMin[i]),"dropoff_map_buckets" ] <- i
   }
   
   
@@ -333,11 +333,11 @@ return_path_and_columns <- function(train){
   # ---------------------------
   
   
-  train$pickup_map_buckets_lat <- as.numeric(0)
-  train$pickup_map_buckets_long <- as.numeric(0)
+  data_frame$pickup_map_buckets_lat <- as.numeric(0)
+  data_frame$pickup_map_buckets_long <- as.numeric(0)
   for(i in 1:(nrow(mapbuckets)-1)){
-    train[train$pickup_map_buckets==i,]$pickup_map_buckets_long <- ceiling((train[train$pickup_map_buckets==i,]$pickup_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
-    train[train$pickup_map_buckets==i,]$pickup_map_buckets_lat <- ceiling((train[train$pickup_map_buckets==i,]$pickup_latitude-mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
+    data_frame[data_frame$pickup_map_buckets==i,]$pickup_map_buckets_long <- ceiling((data_frame[data_frame$pickup_map_buckets==i,]$pickup_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
+    data_frame[data_frame$pickup_map_buckets==i,]$pickup_map_buckets_lat <- ceiling((data_frame[data_frame$pickup_map_buckets==i,]$pickup_latitude-mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
   }
   rm(i)
   
@@ -346,11 +346,11 @@ return_path_and_columns <- function(train){
   # ---------------------------
   
   
-  train$dropoff_map_buckets_lat <- as.numeric(0)
-  train$dropoff_map_buckets_long <- as.numeric(0)
+  data_frame$dropoff_map_buckets_lat <- as.numeric(0)
+  data_frame$dropoff_map_buckets_long <- as.numeric(0)
   for(i in 1:(nrow(mapbuckets)-1)){
-    train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_long <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
-    train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_lat <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_latitude-mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
+    data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_map_buckets_long <- ceiling((data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_longitude-mapbuckets$LongMin[i])/((mapbuckets$LongMax[i]-mapbuckets$LongMin[i])/10))
+    data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_map_buckets_lat <- ceiling((data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_latitude-mapbuckets$LatMin[i])/((mapbuckets$LatMax[i]-mapbuckets$LatMin[i])/10))
   }
   rm(i)
   
@@ -374,31 +374,31 @@ return_path_and_columns <- function(train){
   # Split New jersey away
   # ---------------------------
   # Pickups
-  train[train$pickup_map_buckets==9 & is_point_above(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
-                                                     train$pickup_longitude,train$pickup_latitude),]$pickup_map_buckets <- 10
+  data_frame[data_frame$pickup_map_buckets==9 & is_point_above(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
+                                                     data_frame$pickup_longitude,data_frame$pickup_latitude),]$pickup_map_buckets <- 10
   
   # Dropoffs
-  train[train$dropoff_map_buckets==9 & is_point_above(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
-                                                      train$dropoff_longitude,train$dropoff_latitude),]$dropoff_map_buckets <- 10
+  data_frame[data_frame$dropoff_map_buckets==9 & is_point_above(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
+                                                      data_frame$dropoff_longitude,data_frame$dropoff_latitude),]$dropoff_map_buckets <- 10
   
   
   # ---------------------------
   # Split manhattan away
   # ---------------------------
   # Pickups
-  train[train$pickup_map_buckets==9 & 
+  data_frame[data_frame$pickup_map_buckets==9 & 
           is_point_above(south_boundary_line$a,south_boundary_line$b,south_boundary_line$c,
-                         train$pickup_longitude,train$pickup_latitude) & 
+                         data_frame$pickup_longitude,data_frame$pickup_latitude) & 
           is_point_above(east_river_line$a,east_river_line$b,east_river_line$c,
-                         train$pickup_longitude,train$pickup_latitude),]$pickup_map_buckets <- 11
+                         data_frame$pickup_longitude,data_frame$pickup_latitude),]$pickup_map_buckets <- 11
   
   
   # Dropoff
-  train[train$dropoff_map_buckets==9 & 
+  data_frame[data_frame$dropoff_map_buckets==9 & 
           is_point_above(south_boundary_line$a,south_boundary_line$b,south_boundary_line$c,
-                         train$dropoff_longitude,train$dropoff_latitude) & 
+                         data_frame$dropoff_longitude,data_frame$dropoff_latitude) & 
           is_point_above(east_river_line$a,east_river_line$b,east_river_line$c,
-                         train$dropoff_longitude,train$dropoff_latitude),]$dropoff_map_buckets <- 11
+                         data_frame$dropoff_longitude,data_frame$dropoff_latitude),]$dropoff_map_buckets <- 11
   
   
   # ---------------------------
@@ -406,22 +406,22 @@ return_path_and_columns <- function(train){
   # ---------------------------
   # Pickups
   for(i in 9:10){
-    longmax <- min(train[train$pickup_map_buckets==i,]$pickup_longitude) 
-    longmin <- max(train[train$pickup_map_buckets==i,]$pickup_longitude) 
-    latmax <- max(train[train$pickup_map_buckets==i,]$pickup_latitude)
-    latmin <- min(train[train$pickup_map_buckets==i,]$pickup_latitude)
-    train[train$pickup_map_buckets==i,]$pickup_map_buckets_long <- ceiling((train[train$pickup_map_buckets==i,]$pickup_longitude-longmin)/((longmax-longmin)/10))
-    train[train$pickup_map_buckets==i,]$pickup_map_buckets_lat <- ceiling((train[train$pickup_map_buckets==i,]$pickup_latitude-latmin)/((latmax-latmin)/10))
+    longmax <- min(data_frame[data_frame$pickup_map_buckets==i,]$pickup_longitude) 
+    longmin <- max(data_frame[data_frame$pickup_map_buckets==i,]$pickup_longitude) 
+    latmax <- max(data_frame[data_frame$pickup_map_buckets==i,]$pickup_latitude)
+    latmin <- min(data_frame[data_frame$pickup_map_buckets==i,]$pickup_latitude)
+    data_frame[data_frame$pickup_map_buckets==i,]$pickup_map_buckets_long <- ceiling((data_frame[data_frame$pickup_map_buckets==i,]$pickup_longitude-longmin)/((longmax-longmin)/10))
+    data_frame[data_frame$pickup_map_buckets==i,]$pickup_map_buckets_lat <- ceiling((data_frame[data_frame$pickup_map_buckets==i,]$pickup_latitude-latmin)/((latmax-latmin)/10))
   }
   
   # Dropoffs
   for(i in 9:10){
-    longmax <- min(train[train$dropoff_map_buckets==i,]$dropoff_longitude) 
-    longmin <- max(train[train$dropoff_map_buckets==i,]$dropoff_longitude) 
-    latmax <- max(train[train$dropoff_map_buckets==i,]$dropoff_latitude)
-    latmin <- min(train[train$dropoff_map_buckets==i,]$dropoff_latitude)
-    train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_long <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_longitude-longmin)/((longmax-longmin)/10))
-    train[train$dropoff_map_buckets==i,]$dropoff_map_buckets_lat <- ceiling((train[train$dropoff_map_buckets==i,]$dropoff_latitude-latmin)/((latmax-latmin)/10))
+    longmax <- min(data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_longitude) 
+    longmin <- max(data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_longitude) 
+    latmax <- max(data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_latitude)
+    latmin <- min(data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_latitude)
+    data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_map_buckets_long <- ceiling((data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_longitude-longmin)/((longmax-longmin)/10))
+    data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_map_buckets_lat <- ceiling((data_frame[data_frame$dropoff_map_buckets==i,]$dropoff_latitude-latmin)/((latmax-latmin)/10))
   }
   
   
@@ -432,14 +432,14 @@ return_path_and_columns <- function(train){
   # Removing unnecessary points
   # ---------------------------
   # Pickups
-  train <- train[train$pickup_map_buckets!=0,]
-  train <- train[train$pickup_map_buckets == 11 | train$pickup_map_buckets_lat !=0,]
-  train <- train[train$pickup_map_buckets == 11 | train$pickup_map_buckets_long !=0,]
+  data_frame <- data_frame[data_frame$pickup_map_buckets!=0,]
+  data_frame <- data_frame[data_frame$pickup_map_buckets == 11 | data_frame$pickup_map_buckets_lat !=0,]
+  data_frame <- data_frame[data_frame$pickup_map_buckets == 11 | data_frame$pickup_map_buckets_long !=0,]
   
   # dropoffs
-  train <- train[train$dropoff_map_buckets!=0,]
-  train <- train[train$dropoff_map_buckets == 11 | train$dropoff_map_buckets_lat !=0,]
-  train <- train[train$dropoff_map_buckets == 11 | train$dropoff_map_buckets_long !=0,]
+  data_frame <- data_frame[data_frame$dropoff_map_buckets!=0,]
+  data_frame <- data_frame[data_frame$dropoff_map_buckets == 11 | data_frame$dropoff_map_buckets_lat !=0,]
+  data_frame <- data_frame[data_frame$dropoff_map_buckets == 11 | data_frame$dropoff_map_buckets_long !=0,]
   
   # ---------------------------
   # Get boundary points/lines for manhattan
@@ -464,27 +464,27 @@ return_path_and_columns <- function(train){
   # ---------------------------
   
   # Pickups
-  train[train$pickup_map_buckets == 11,]$pickup_map_buckets_long <- ceiling(perpendicular_distance_from_point_to_line(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
-                                                                                                                      train[train$pickup_map_buckets == 11,]$pickup_longitude,train[train$pickup_map_buckets == 11,]$pickup_latitude)*10/
+  data_frame[data_frame$pickup_map_buckets == 11,]$pickup_map_buckets_long <- ceiling(perpendicular_distance_from_point_to_line(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
+                                                                                                                      data_frame[data_frame$pickup_map_buckets == 11,]$pickup_longitude,data_frame[data_frame$pickup_map_buckets == 11,]$pickup_latitude)*10/
                                                                               distance_between_parallel_lines(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
                                                                                                               east_manhattan$a,east_manhattan$b,east_manhattan$c))
   
   
-  train[train$pickup_map_buckets == 11,]$pickup_map_buckets_lat <- ceiling(perpendicular_distance_from_point_to_line(north_manhattan$a,north_manhattan$b,north_manhattan$c,
-                                                                                                                     train[train$pickup_map_buckets == 11,]$pickup_longitude,train[train$pickup_map_buckets == 11,]$pickup_latitude)*10/
+  data_frame[data_frame$pickup_map_buckets == 11,]$pickup_map_buckets_lat <- ceiling(perpendicular_distance_from_point_to_line(north_manhattan$a,north_manhattan$b,north_manhattan$c,
+                                                                                                                     data_frame[data_frame$pickup_map_buckets == 11,]$pickup_longitude,data_frame[data_frame$pickup_map_buckets == 11,]$pickup_latitude)*10/
                                                                              distance_between_parallel_lines(north_manhattan$a,north_manhattan$b,north_manhattan$c,
                                                                                                              south_manhattan$a,south_manhattan$b,south_manhattan$c))
   
   
   # dropoffs
-  train[train$dropoff_map_buckets == 11,]$dropoff_map_buckets_long <- ceiling(perpendicular_distance_from_point_to_line(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
-                                                                                                                        train[train$dropoff_map_buckets == 11,]$dropoff_longitude,train[train$dropoff_map_buckets == 11,]$dropoff_latitude)*10/
+  data_frame[data_frame$dropoff_map_buckets == 11,]$dropoff_map_buckets_long <- ceiling(perpendicular_distance_from_point_to_line(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
+                                                                                                                        data_frame[data_frame$dropoff_map_buckets == 11,]$dropoff_longitude,data_frame[data_frame$dropoff_map_buckets == 11,]$dropoff_latitude)*10/
                                                                                 distance_between_parallel_lines(hudson_river_line$a,hudson_river_line$b,hudson_river_line$c,
                                                                                                                 east_manhattan$a,east_manhattan$b,east_manhattan$c))
   
   
-  train[train$dropoff_map_buckets == 11,]$dropoff_map_buckets_lat <- ceiling(perpendicular_distance_from_point_to_line(north_manhattan$a,north_manhattan$b,north_manhattan$c,
-                                                                                                                       train[train$dropoff_map_buckets == 11,]$dropoff_longitude,train[train$dropoff_map_buckets == 11,]$dropoff_latitude)*10/
+  data_frame[data_frame$dropoff_map_buckets == 11,]$dropoff_map_buckets_lat <- ceiling(perpendicular_distance_from_point_to_line(north_manhattan$a,north_manhattan$b,north_manhattan$c,
+                                                                                                                       data_frame[data_frame$dropoff_map_buckets == 11,]$dropoff_longitude,data_frame[data_frame$dropoff_map_buckets == 11,]$dropoff_latitude)*10/
                                                                                distance_between_parallel_lines(north_manhattan$a,north_manhattan$b,north_manhattan$c,
                                                                                                                south_manhattan$a,south_manhattan$b,south_manhattan$c))
   
@@ -497,13 +497,13 @@ return_path_and_columns <- function(train){
   # --------------
   # checking frequency of travel between major map_buckets
   # --------------
-  train$is_intra_bucket <- train$pickup_map_buckets == train$dropoff_map_buckets
-  train$is_interbucket_into_11 <- 0
+  data_frame$is_intra_bucket <- data_frame$pickup_map_buckets == data_frame$dropoff_map_buckets
+  data_frame$is_interbucket_into_11 <- 0
   
-  train[((train$pickup_map_buckets == 11) | (train$dropoff_map_buckets == 11)) & 
-          (train$pickup_map_buckets != train$dropoff_map_bucket),]$is_interbucket_into_11 <- 1
+  data_frame[((data_frame$pickup_map_buckets == 11) | (data_frame$dropoff_map_buckets == 11)) & 
+          (data_frame$pickup_map_buckets != data_frame$dropoff_map_bucket),]$is_interbucket_into_11 <- 1
   
-  intrabucket_frequency <- as.data.frame.matrix(table(train$pickup_map_buckets, train$dropoff_map_buckets))
+  intrabucket_frequency <- as.data.frame.matrix(table(data_frame$pickup_map_buckets, data_frame$dropoff_map_buckets))
   
   
   
@@ -512,15 +512,15 @@ return_path_and_columns <- function(train){
   # Create all possible groups and subgroups
   # --------------
   
-  numcol <- max(train$pickup_map_buckets,train$dropoff_map_buckets)*
-    max(train$pickup_map_buckets_long,train$dropoff_map_buckets_long)*
-    max(train$pickup_map_buckets_lat,train$dropoff_map_buckets_lat)
+  numcol <- max(data_frame$pickup_map_buckets,data_frame$dropoff_map_buckets)*
+    max(data_frame$pickup_map_buckets_long,data_frame$dropoff_map_buckets_long)*
+    max(data_frame$pickup_map_buckets_lat,data_frame$dropoff_map_buckets_lat)
   
   columnnames = rep("",2*numcol)
   i=1
-  for(mb in (1:max(train$pickup_map_buckets,train$dropoff_map_buckets))){
-    for(ln in (1:max(train$pickup_map_buckets_long,train$dropoff_map_buckets_long))){
-      for(lt in (1:max(train$pickup_map_buckets_lat,train$dropoff_map_buckets_lat))){
+  for(mb in (1:max(data_frame$pickup_map_buckets,data_frame$dropoff_map_buckets))){
+    for(ln in (1:max(data_frame$pickup_map_buckets_long,data_frame$dropoff_map_buckets_long))){
+      for(lt in (1:max(data_frame$pickup_map_buckets_lat,data_frame$dropoff_map_buckets_lat))){
         
         mblnlt1 <- paste0("thru_g",mb,"ln",ln,"lt",lt)
         mblnlt2 <- paste0("ss_g",mb,"ln",ln,"lt",lt)
@@ -531,8 +531,8 @@ return_path_and_columns <- function(train){
     }
   }
   rm(i,mblnlt1,mblnlt2,ln,lt,mb)
-  path_matrix <- Matrix(data = 0,nrow = nrow(train),ncol = 2*numcol,sparse = T,byrow = F,
-                        dimnames = list(as.character(seq(1,nrow(train))),columnnames))
+  path_matrix <- Matrix(data = 0,nrow = nrow(data_frame),ncol = 2*numcol,sparse = T,byrow = F,
+                        dimnames = list(as.character(seq(1,nrow(data_frame))),columnnames))
   
   
   
@@ -541,12 +541,12 @@ return_path_and_columns <- function(train){
   # ----------------------
   # Get the start and dropoff points in the path matrix
   # ----------------------
-  start_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$pickup_map_buckets,train$pickup_map_buckets_long,train$pickup_map_buckets_lat,T), 
-                               x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
+  start_matrix <- sparseMatrix(i = 1:nrow(data_frame), j = give_col_no(data_frame$pickup_map_buckets,data_frame$pickup_map_buckets_long,data_frame$pickup_map_buckets_lat,T), 
+                               x = 1,dims = c(nrow(data_frame),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(data_frame))),columnnames)
   )
   
-  drop_matrix <- sparseMatrix(i = 1:nrow(train), j = give_col_no(train$dropoff_map_buckets,train$dropoff_map_buckets_long,train$dropoff_map_buckets_lat,T), 
-                              x = 1,dims = c(nrow(train),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(train))),columnnames)
+  drop_matrix <- sparseMatrix(i = 1:nrow(data_frame), j = give_col_no(data_frame$dropoff_map_buckets,data_frame$dropoff_map_buckets_long,data_frame$dropoff_map_buckets_lat,T), 
+                              x = 1,dims = c(nrow(data_frame),ncol(path_matrix)),dimnames = list(as.character(seq(1,nrow(data_frame))),columnnames)
   )
   
   path_matrix <- path_matrix + start_matrix + drop_matrix
@@ -559,58 +559,58 @@ return_path_and_columns <- function(train){
   
   # pickups fresh buckets
   # bucket_xy_mapping <- read.csv("rawdata/bucket_xy_mapping.csv")
-  # train$pickup_bucket_coord <- 11
-  # train$dropoff_bucket_coord <- 11
+  # data_frame$pickup_bucket_coord <- 11
+  # data_frame$dropoff_bucket_coord <- 11
   # for(i in 1:nrow(bucket_xy_mapping)){
-  #   train$pickup_bucket_coord[train$pickup_map_buckets==bucket_xy_mapping$MapBuckets[i]] <- bucket_xy_mapping$bucketcoord[i]
-  #   train$dropoff_bucket_coord[train$dropoff_map_buckets==bucket_xy_mapping$MapBuckets[i]] <- bucket_xy_mapping$bucketcoord[i]
+  #   data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==bucket_xy_mapping$MapBuckets[i]] <- bucket_xy_mapping$bucketcoord[i]
+  #   data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==bucket_xy_mapping$MapBuckets[i]] <- bucket_xy_mapping$bucketcoord[i]
   # }
   # 
-  # train$pickup_bucket_coord[train$pickup_map_buckets==8] <- 12
-  # train$pickup_bucket_coord[train$pickup_map_buckets==7] <- 13
-  # train$pickup_bucket_coord[train$pickup_map_buckets==2] <- 21
-  # train$pickup_bucket_coord[train$pickup_map_buckets==10] <- 22
-  # train$pickup_bucket_coord[train$pickup_map_buckets==11] <- 23
-  # train$pickup_bucket_coord[train$pickup_map_buckets==9] <- 24
-  # train$pickup_bucket_coord[train$pickup_map_buckets==6] <- 25
-  # train$pickup_bucket_coord[train$pickup_map_buckets==3] <- 31
-  # train$pickup_bucket_coord[train$pickup_map_buckets==4] <- 32
-  # train$pickup_bucket_coord[train$pickup_map_buckets==5] <- 33
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==8] <- 12
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==7] <- 13
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==2] <- 21
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==10] <- 22
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==11] <- 23
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==9] <- 24
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==6] <- 25
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==3] <- 31
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==4] <- 32
+  # data_frame$pickup_bucket_coord[data_frame$pickup_map_buckets==5] <- 33
   # # dropoffs fresh buckets
-  # train$dropoff_bucket_coord <- 11
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==1] <- 11
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==8] <- 12
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==7] <- 13
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==2] <- 21
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==10] <- 22
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==11] <- 23
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==9] <- 24
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==6] <- 25
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==3] <- 31
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==4] <- 32
-  # train$dropoff_bucket_coord[train$dropoff_map_buckets==5] <- 33
+  # data_frame$dropoff_bucket_coord <- 11
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==1] <- 11
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==8] <- 12
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==7] <- 13
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==2] <- 21
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==10] <- 22
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==11] <- 23
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==9] <- 24
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==6] <- 25
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==3] <- 31
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==4] <- 32
+  # data_frame$dropoff_bucket_coord[data_frame$dropoff_map_buckets==5] <- 33
   
-  intrabucket_frequency2 <- as.data.frame.matrix(table(train$pickup_bucket_coord,train$dropoff_bucket_coord))
+  intrabucket_frequency2 <- as.data.frame.matrix(table(data_frame$pickup_bucket_coord,data_frame$dropoff_bucket_coord))
   
   # ----------------------
   # Register all paths in a smaller dense matrix to add to the larger one later
   # ----------------------
-  # path <- mapply(FUN = give_intrabucket_path,"pickup_map_buckets" = train$pickup_map_buckets,"pickup_longitude" = train$pickup_map_buckets_long,
-  #                "pickup_latitude" = train$pickup_map_buckets_lat,
-  #                "dropoff_map_buckets" =  train$dropoff_map_buckets,
-  #                "dropoff_longitude" = train$dropoff_map_buckets_long,
-  #                "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T)
+  # path <- mapply(FUN = give_intrabucket_path,"pickup_map_buckets" = data_frame$pickup_map_buckets,"pickup_longitude" = data_frame$pickup_map_buckets_long,
+  #                "pickup_latitude" = data_frame$pickup_map_buckets_lat,
+  #                "dropoff_map_buckets" =  data_frame$dropoff_map_buckets,
+  #                "dropoff_longitude" = data_frame$dropoff_map_buckets_long,
+  #                "dropoff_latitude" = data_frame$dropoff_map_buckets_lat,SIMPLIFY = T)
   
-  path <- mapply(FUN = give_path,"pickup_map_buckets" = train$pickup_map_buckets,"pickup_longitude" = train$pickup_map_buckets_long,
-                 "pickup_latitude" = train$pickup_map_buckets_lat,
-                 "dropoff_map_buckets" =  train$dropoff_map_buckets,
-                 "dropoff_longitude" = train$dropoff_map_buckets_long,
-                 "dropoff_latitude" = train$dropoff_map_buckets_lat,SIMPLIFY = T)
+  path <- mapply(FUN = give_path,"pickup_map_buckets" = data_frame$pickup_map_buckets,"pickup_longitude" = data_frame$pickup_map_buckets_long,
+                 "pickup_latitude" = data_frame$pickup_map_buckets_lat,
+                 "dropoff_map_buckets" =  data_frame$dropoff_map_buckets,
+                 "dropoff_longitude" = data_frame$dropoff_map_buckets_long,
+                 "dropoff_latitude" = data_frame$dropoff_map_buckets_lat,SIMPLIFY = T)
   
   path <- mapply(FUN = return100cols,vector=path,SIMPLIFY = T)
   path <- t(path)
   
-  numrows <- nrow(train)
+  numrows <- nrow(data_frame)
   for(i in 1:100){
     add_matrix <- sparseMatrix(i = seq(1,numrows)[!is.na(path[,i])], j = path[,i][!is.na(path[,i])], 
                                x = 1,dims = c(numrows,2*numcol))
@@ -622,5 +622,20 @@ return_path_and_columns <- function(train){
   rm(numcol,numrows,columnnames)
   # start_matrix[1,2352:2355]
   
-  return(list("data_frame" = train,"path_matrix" = path_matrix))
+  return(list("data_frame" = data_frame,"path_matrix" = path_matrix))
+}
+
+get_full_training_columns <- function(data_frame_and_sparse_matrix_input){
+  data_frame_input <- data_frame_and_sparse_matrix_input[[1]]
+  sparse_matrix_input <- data_frame_and_sparse_matrix_input[[2]]
+  # Usefule columns
+  mycols <- c("passenger_count","vendor_id","distance",
+              "hour_of_day","distance_buckets","sf","is_intra_bucket","is_interbucket_into_11",
+              "pickup_map_buckets","pickup_map_buckets_lat","pickup_map_buckets_long",
+              "dropoff_map_buckets","dropoff_map_buckets_lat","dropoff_map_buckets_long")
+  
+  useful_subset <- subset(data_frame_input,select = mycols)
+  useful_subset <- Matrix(data=as.matrix(useful_subset),sparse = T)
+  sparse_matrix_input <- cbind(useful_subset,sparse_matrix_input)
+  return(sparse_matrix_input)
 }
