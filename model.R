@@ -38,6 +38,7 @@ validate_path <- get_full_training_columns(validation_with_path)
 # ------------------------------
 # Predict and Find area under curve
 # ------------------------------
+fit <- glmnet(train_path,as.numeric(train_with_path[[1]]$trip_duration))
 cv <- cv.glmnet(train_path,as.numeric(train_with_path[[1]]$trip_duration),nfolds=3)
 pred <- predict(fit, test_path,type="response", s=cv$lambda.min)
 auc = roc(test_with_path[[1]]$trip_duration, pred[,1])
