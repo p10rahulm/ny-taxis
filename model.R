@@ -48,4 +48,31 @@ print(auc$auc)
 # Recursively better the model. For now output the predicted values for validation
 # ------------------------------
 pred <- predict(fit, validate_path,type="response", s=cv$lambda.min)
-write.csv(pred[,1],"output/predicted_values.csv")
+
+# ------------------------------
+# Predict those not predicted
+# ------------------------------
+
+load(file = "rawdata/validation.bin")
+val_raw <- validation
+validation <- validation_with_path[[1]]
+validation <- cbind(validation,pred[,1])
+validation <- subset(validation,select = c("id","distance","V2"))
+validation <- merge(val_raw,validation,by = "id",all.x = T)
+validation$distance <- distance_between_points(validation$pickup_longitude,validation$pickup_latitude,
+                                               validation$dropoff_longitude,validation$dropoff_latitude)*4.241/6.745779e-02
+
+train_with_path[[1]]$speed <- train_with_path[[1]]$distance/(train_with_path[[1]]$trip_duration/3600)
+# train_with_path[[1]] <- data.table(train_with_path[[1]])
+avg_speed_training <- mean(train_with_path[[1]]$speed)
+
+validation$time_taken <- validation$distance/(avg_speed_training)*3600
+# validation$hour_of_day <- as.numeric(substr(validation$pickup_datetime,12,13))
+validation$V2[is.na(validation$V2)] <- validation$time_taken[is.na(validation$V2)]
+validation$V2[validation$V2<=60] <- validation$time_taken[validation$V2<=60]
+
+validation$trip_duration <- validation$V2
+
+subset_to_write <- subset(validation,select = c("id","trip_duration"))
+
+write.csv(subset_to_write,"output/submission.csv")

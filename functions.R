@@ -258,7 +258,7 @@ return_path_and_columns <- function(data_frame){
   # ---------------
   
   data_frame$distance <- distance_between_points(data_frame$pickup_longitude,data_frame$pickup_latitude,
-                                            data_frame$dropoff_longitude,data_frame$dropoff_latitude)
+                                            data_frame$dropoff_longitude,data_frame$dropoff_latitude)*4.241/6.745779e-02
   
   # # --------------------
   # # # trip duration field in hours
