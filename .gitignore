@@ -1,8 +1,4 @@
 # Data Files
-/data/
-/rawdata/
-/cleaned/
-/output/
 
 /*.pptx
 /*.xlsx
